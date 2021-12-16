@@ -28,12 +28,18 @@ def get_list():
 
     }
 
+    
+
     r = requests.post(api_url_db, headers=payload).json()
-
+    #print(json.dumps(r))#[0]["text"]["content"]
     for page in r["results"]:
-        print("- " + page["properties"]["Name"]["title"][0]["text"]["content"])
-        # print(page)
+        pathA = page.get("properties").get("Name").get("title")
+        if len(pathA)>0:
+            print(pathA[0].get("text").get("content"))
+    
+        #print(page)
 
 
-#new_page("Hello World")
+#new_page("Hello World 2")
+#new_page("Hey")
 get_list()
