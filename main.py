@@ -1,7 +1,9 @@
 import requests
 import json
 import argparse
+import sys
 from config import *
+
 
 
 def new_page(title):
@@ -43,10 +45,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "function", help="Insert the fuction of the ToDo.\nUse [get] or [add]")
+    parser.add_argument(
+        "--title", help="Insert the fuction of the ToDo.\nUse [get] or [add]",
+        required="add" in sys.argv)    
     args = parser.parse_args()
 
     if args.function == "add":
-        new_page("Hey")
+        new_page(args.title)
     elif args.function == "get":
         get_pages()
     else:
