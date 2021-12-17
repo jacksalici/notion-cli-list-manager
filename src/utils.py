@@ -9,17 +9,17 @@ class file_helper():
 
     def get(file):
         with open(file, "r") as file_text:
-            return file_text
+            return file_text.read()
     
     def set(file, text):
-        with open(file, "a") as file_text:
-            file_text.write(text)
+        with open(file, "w") as file_text:
+            file_text.write(json.dumps(text))
 
 class api_helper():
     api_url_pre = "https://api.notion.com/v1/"
     
  
-    NOTION_API_KEY = json.load(file_helper.get(file_helper.stoken_file)).get("token")
+    NOTION_API_KEY = json.loads(file_helper.get(file_helper.token_file)).get("token")
 
     with open ("src/config.toml", "r") as config_file:
         DATABASE_ID = toml.load(config_file).get("databases").get("id")
@@ -39,6 +39,11 @@ class api_helper():
 
     def get_pages(self):
         return self.api_post(self, "databases/" + self.DATABASE_ID + "/query", "")
+    
+
+    def remove_page(self, page_id):
+        return self.api_post(self, "blocks/" + page_id, "")
+
         
 
     def api_post(self, api_url_post, data):
