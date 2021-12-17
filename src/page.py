@@ -16,8 +16,8 @@ def all():
             
         if len(path) > 0:
             typer.echo("\t" + str(index) + "\t" + path[0].get("text").get("content"))
-            index+=1
             pages_dict[str(index)] = page
+            index+=1
 
     file_helper.set(file_helper.pages_file, pages_dict)
 
