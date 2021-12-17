@@ -1,4 +1,5 @@
 import typer
+import json
 from utils import api_helper, file_helper
 
 
@@ -20,5 +21,11 @@ def all():
 
     file_helper.set(file_helper.pages_file, pages_dict)
 
-def remove(string_of_index):
+def remove(list_of_indexes):
     
+    pages_dict = {"dict" : file_helper.get(file_helper.pages_file)}
+    for index in list_of_indexes:
+        p = pages_dict.get("dict").get(str(index))
+        if type(p) == dict:
+            api_helper.remove_page(api_helper, p.get("id"))
+
