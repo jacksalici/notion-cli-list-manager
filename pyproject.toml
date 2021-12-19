@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "notion-cli-todo-manager"
 version = "0.1.0"
-description = "A simple line-command tool for managing a Notion ToDo Database"
+description = "A simple line-command tool for managing a Notion ToDo Database."
 authors = ["Jack Salici"]
 license = "MIT"
 readme = "README.md"

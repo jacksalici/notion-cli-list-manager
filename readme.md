@@ -21,6 +21,27 @@ A simple command-line tool for managing [Notion](http://notion.so) ___ToDo___ da
 
 ## Usage:
 
+Since it is a beta version, the package it's not avaiable on pypi.org yet. Thus, in order to use it you have to install it manually.
+Having installed Python3 and Pip3 on your machine, write on the terminal:
+
+``` 
+    git clone https://github.com/jacksalici/notion-cli-todo-manager.git notion-cli-todo-manager
+
+    cd notion-cli-todo-manager
+
+    pip3 install notion-cli-todo-manager/dist/notion-cli-todo-manager-0.1.0.tar.gz
+
+```
+
+Then set the token and the database id:
+
+```
+    todo set [token] [database-id]
+
+``` 
+
+And finally you can use the commands above.
+
 
 ## Still toDo:
 ###### forgive the play on words
