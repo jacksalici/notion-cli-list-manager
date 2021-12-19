@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "notion-cli-todo-manager"
+version = "0.1.0"
+description = "A simple line-command tool for managing a Notion ToDo Database"
+authors = ["Jack Salici"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.26.0"
+typer = "^0.4.0"
+
+
+[tool.poetry.scripts]
+todo = "notion_cli_todo_manager.main:app"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

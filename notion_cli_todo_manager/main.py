@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-from typing import _ProtocolMeta
 import typer
-import page
+from .page import page
 
 def string_parser(string: str):
 
@@ -39,10 +38,19 @@ def all():
 def rm(string_of_index: str):
     page.remove(string_parser(string_of_index))
 
+@app.command()
+def set(
+    token: str,
+    db: str
+):
+    page.set_database(db)
+    page.set_token(token)
 
-if __name__ == "__main__":
+
+
+
+if __name__=="__main__":
     app()
-
 
 
 
