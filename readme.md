@@ -27,8 +27,6 @@ Having installed Python3 and Pip3 on your machine, write on the terminal:
 ``` 
     git clone https://github.com/jacksalici/notion-cli-todo-manager.git notion-cli-todo-manager
 
-    cd notion-cli-todo-manager
-
     pip3 install notion-cli-todo-manager/dist/notion-cli-todo-manager-0.1.0.tar.gz
 
 ```
