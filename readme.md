@@ -43,11 +43,7 @@ And finally, you can use the commands above.
 
 ## Still toDo:
 ###### forgive the play on words
-See the project tab for a more verbose list.
+See the [project tab](https://github.com/jacksalici/notion-cli-todo-manager/projects/1) for a complete and real-time-updated list.
 
-- [ ] `rm --all` command arg
-- [ ] support for tags
-- [ ] support for more databases
-- [ ] support for sigle pages editing
-- [ ] improve the code stability
-- [ ] http requests async 
+## Collaboration:
+Issues and PRs are really appreciated. 
