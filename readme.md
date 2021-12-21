@@ -21,7 +21,7 @@ A simple command-line tool for managing [Notion](http://notion.so) ___ToDo___ da
 
 ## Usage:
 
-Since it is a beta version, the package it's not avaiable on pypi.org yet. Thus, in order to use it you have to install it manually.
+Since it is a beta version, the package it's not available on pypi.org yet. Thus, you have to install it manually.
 Having installed Python3 and Pip3 on your machine, write on the terminal:
 
 ``` 
@@ -38,13 +38,16 @@ Then set the token and the database id:
 
 ``` 
 
-And finally you can use the commands above.
+And finally, you can use the commands above.
 
 
 ## Still toDo:
 ###### forgive the play on words
+See the project tab for a more verbose list.
 
 - [ ] `rm --all` command arg
 - [ ] support for tags
+- [ ] support for more databases
+- [ ] support for sigle pages editing
 - [ ] improve the code stability
 - [ ] http requests async 
