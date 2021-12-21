@@ -27,12 +27,15 @@ def string_parser(string: str):
 app = typer.Typer()
  
 @app.command()
-def add(title: str):
-    page.add(title)
+def add(title: str, database: str = typer.Option("Default")):
+    page.add(title, database)
 
 @app.command()
-def all():
-    page.all()
+def all(database: str = typer.Option("Default"), verbose: bool = typer.Option(False)):
+    if(verbose):
+        page.all_by_all()    
+    else:
+        page.all(database)
 
 @app.command()
 def rm(string_of_index: str):
@@ -40,12 +43,17 @@ def rm(string_of_index: str):
 
 @app.command()
 def set(
-    token: str,
-    db: str
+    token: str = typer.Option(""),
+    key: str = typer.Option("Default"),
+    id: str = typer.Option(""),
 ):
-    page.set_database(db)
-    page.set_token(token)
+    if token != "":
+        page.set_token(token)
+    
+    if id != "":
+        page.set_database(key, id)
 
+        
 
 
 

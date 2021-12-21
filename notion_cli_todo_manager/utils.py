@@ -34,7 +34,6 @@ class api_helper():
  
     NOTION_API_KEY = str(file_helper.get_dict(file_helper.token_file).get("token"))
 
-    DATABASE_ID = str(file_helper.get_dict(file_helper.config_file).get("database_id"))
 
     payload = {
         "Authorization": NOTION_API_KEY,
@@ -42,16 +41,23 @@ class api_helper():
         "Content-Type": "application/json"
 
     }
-    
-    def new_page(self, title):
 
-        data = '{"parent":{"database_id":"'+self.DATABASE_ID + \
+    def get_db_id (database = ""):
+        dict = file_helper.get_dict(file_helper.config_file).get("database_ids")
+        return (str(dict.get(database)))
+    
+    def get_dbs_keys():
+        return file_helper.get_dict(file_helper.config_file).get("database_ids").keys()
+
+    
+    def new_page(self, title, database):
+        data = '{"parent":{"database_id":"'+ self.get_db_id(database) + \
         '"},"properties":{"Name":{"title":[{"text":{"content":"'+title+'"}}]}}}'
         return self.api_post(self, "pages", data)
 
 
-    def get_pages(self):
-        return self.api_post(self, "databases/" + self.DATABASE_ID + "/query", "")
+    def get_pages(self, database):
+        return self.api_post(self, "databases/" + self.get_db_id(database) + "/query", "")
     
 
     def remove_page(self, page_id):
