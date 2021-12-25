@@ -4,7 +4,6 @@ from .utils import api_helper, file_helper
 
 class page():
 
-    index = 0
 
     def add(title, database):
         api_helper.new_page(api_helper, title, database)
@@ -53,4 +52,17 @@ class page():
 
         print(file_helper.set(file_helper.config_file, db_dict))
 
+    def show_databases():
+        list = api_helper.get_dbs_keys()
+        for db in list:
+            typer.echo("\t" + str(db))
 
+    def rm_database(db):
+        dict = file_helper.get_dict(file_helper.config_file)
+        r = dict.get("database_ids").pop(db)
+        file_helper.set(file_helper.config_file, dict)
+
+    def add_database(label, id):
+        dict = file_helper.get_dict(file_helper.config_file)
+        dict.get("database_ids")[label] = id
+        file_helper.set(file_helper.config_file, dict)

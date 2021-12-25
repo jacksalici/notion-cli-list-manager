@@ -1,5 +1,5 @@
 /vir_env
 .vscode
-/notion_cli_todo_manager/token.json
-/notion_cli_todo_manager/config.json
-/notion_cli_todo_manager/pages.json
+/notion_cli_list_manager/token.json
+/notion_cli_list_manager/config.json
+/notion_cli_list_manager/pages.json
