@@ -17,17 +17,18 @@ class page():
         r = api_helper.get_pages(api_helper, database)
         pages_dict = {}
 
-        if r["object"] == "list":
-            for page in r["results"]:
-                    path = page.get("properties").get("Name").get("title")
-                        
-                    if len(path) > 0:
-                        typer.echo("\t" + str(index) + "\t" + path[0].get("text").get("content"))
-                        pages_dict[str(index)] = page
-                        index+=1
+        if type(r) is dict:
+            if r["object"] == "list":
+                for page in r["results"]:
+                        path = page.get("properties").get("Name").get("title")
+                            
+                        if len(path) > 0:
+                            typer.echo("\t" + str(index) + "\t" + path[0].get("text").get("content"))
+                            pages_dict[str(index)] = page
+                            index+=1
 
-        elif r["object"] == "error":
-            typer.echo("Error:\t" + str(r["message"]))
+            elif r["object"] == "error":
+                typer.echo("Error:\t" + str(r["message"]))
                 
 
         file_helper.set(file_helper.pages_file, pages_dict)

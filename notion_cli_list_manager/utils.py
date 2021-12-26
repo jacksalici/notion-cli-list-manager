@@ -21,7 +21,7 @@ class file_helper():
             else:
                 typer.echo("File not found. Be sure to set the token and the db id with 'set'.")
             
-            return json.loads("{}")
+            return {}
 
     
     def set(file, text):
@@ -43,8 +43,11 @@ class api_helper():
     }
 
     def get_db_id (database = ""):
-        dict = file_helper.get_dict(file_helper.config_file).get("database_ids")
-        return (str(dict.get(database)))
+        try:
+            dict = file_helper.get_dict(file_helper.config_file).get("database_ids")
+            return (str(dict.get(database)))
+        except AttributeError:
+            return ""
 
    
     
