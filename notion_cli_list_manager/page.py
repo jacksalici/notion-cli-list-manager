@@ -49,9 +49,13 @@ class page():
     
     def set_database(key, id):
         db_dict = file_helper.get_dict(file_helper.config_file)
+        print(db_dict)
+        if "database_ids" not in db_dict.keys():
+            db_dict["database_ids"] = {}
+        
         db_dict.get("database_ids")[key] = id
 
-        print(file_helper.set(file_helper.config_file, db_dict))
+        file_helper.set(file_helper.config_file, json.dumps(db_dict))
 
     def show_databases():
         list = api_helper.get_dbs_keys()

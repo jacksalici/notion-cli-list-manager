@@ -13,20 +13,23 @@ class file_helper():
 
     def get_dict(file):
         try:
-            with open(file, "r") as file_text:
-                return json.loads(file_text.read())
-        except OSError:
+            with open(file, "r+") as file_text:
+               
+                r = json.load(file_text)
+                print(r)
+                return r
+        except:
             if file == file_helper.pages_file:
                 typer.echo("Config file not found. Be sure to call the to-do with 'all'.")
             else:
                 typer.echo("File not found. Be sure to set the token and the db id with 'set'.")
             
-            return {}
+            return json.loads("{}")
 
     
     def set(file, text):
         with open(file, "w") as file_text:
-            return file_text.write(json.dumps(text))
+            return file_text.write(text)
 
 class api_helper():
     api_url_pre = "https://api.notion.com/v1/"
