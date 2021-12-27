@@ -28,11 +28,11 @@ app = typer.Typer()
  
 @app.command()
 def add(title: str = typer.Argument(..., help="The title of the page."),
-        database: str = typer.Option("Default", help="To add the page to a custom database (Leave the option blank and the default database will be used.)", show_default=False)):
+        db: str = typer.Option("Default", help="To add the page to a custom database (Leave the option blank and the default database will be used.)", show_default=False)):
     """
     Add an entry to your database.
     """
-    page.add(title, database)
+    page.add(title, db)
 
 @app.command()
 def rm(string_of_index: str = typer.Argument(..., metavar="INDEX", help="The index of the page to remove.")):
@@ -59,9 +59,10 @@ def set(
 
 @app.command()
 def db(
-    rm: str = typer.Option("", help="Remove a database from the manager.", metavar="LABEL")):
+    rm: str = typer.Option("", help="Remove a database from the manager.", metavar="LABEL"),
     label: str = typer.Option("", help="Add a database from the manager.", metavar="LABEL"),
     id: str = typer.Option("", help="The database id.") 
+    ):
     """
     Display the databases saved on the manager. To add or to remove a database here does not cause the actual creation or deletion on Notion. 
     """
@@ -72,13 +73,13 @@ def db(
     elif rm != "":
         page.rm_database(rm)
     else:
-        page.add_database(label, id)
+        page.set_database(label, id)
     
       
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context,
-    database: str = typer.Option("Default", help="Display the list for a specific database"),
+        db: str = typer.Option("Default", help="Display the list for a specific database"),
         all: bool = typer.Option(False, help="Display all the lists.")):
 
     if ctx.invoked_subcommand is None:
