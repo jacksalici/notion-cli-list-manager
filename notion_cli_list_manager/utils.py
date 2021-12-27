@@ -96,8 +96,15 @@ class api_helper():
         
 
     def api_post(self, api_url_post, data):
+        return self.api(self, requests.post, api_url_post, data)
+
+
+    def api_delete(self, api_url_post, data):
+        return self.api(self, requests.delete, api_url_post, data)
+
+    def api(self, function, api_url_post, data):
         try:
-            r = requests.post(self.api_url_pre + api_url_post, headers=self.payload, data=data)
+            r = function(self.api_url_pre + api_url_post, headers=self.payload, data=data)
             if (r.status_code == 200):
                 return r.json()
             else:
@@ -106,8 +113,3 @@ class api_helper():
         except:
             typer.echo("Request post error")
             return ""
-
-
-    def api_delete(self, api_url_post, data):
-        return requests.delete(self.api_url_pre + api_url_post, headers=self.payload, data=data).json() 
-
