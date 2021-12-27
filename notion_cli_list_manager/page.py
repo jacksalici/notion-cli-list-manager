@@ -14,7 +14,7 @@ class page():
         x.field_names = ["Index", "Title"]
         x.align["Index"] = "r"
         x.align["Title"] = "l"
-        
+
         for key in toml_helper.get_db_keys():
             index, x = page.query(key, index, x)
         typer.echo(x)
@@ -74,8 +74,11 @@ class page():
 
     def show_databases():
         list = toml_helper.get_db_keys()
+        x = PrettyTable()
+        x.field_names = ["Label"]
         for label in list:
-            typer.echo("\t" + label)
+            x.add_row([label])
+        typer.echo(x)
 
     def rm_database(label):
         dict = toml_helper.get_dict()
