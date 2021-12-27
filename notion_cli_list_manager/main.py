@@ -81,12 +81,15 @@ def db(
 def main(ctx: typer.Context,
         db: str = typer.Option("Default", help="Display the list for a specific database"),
         all: bool = typer.Option(False, help="Display all the lists.")):
-
+    """
+    The Notion Cli List Manager allows you to manage - as you can imagine - Notion Lists.
+    Use the set command to initialize the token and the default database id.
+    """
     if ctx.invoked_subcommand is None:
         if(all):
             page.all_by_all()    
         else:
-            page.all(database)
+            page.all(db)
 
 
 if __name__=="__main__":

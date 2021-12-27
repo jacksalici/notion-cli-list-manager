@@ -1,6 +1,7 @@
 import typer
 import json
 from .utils import api_helper, file_helper, toml_helper
+from prettytable import PrettyTable
 
 class page():
 
@@ -9,10 +10,24 @@ class page():
 
     def all_by_all():
         index = 0
+        x = PrettyTable()
+        x.field_names = ["Index", "Title"]
+        x.align["Index"] = "r"
+        x.align["Title"] = "l"
+        
         for key in toml_helper.get_db_keys():
-            index = page.all(key, index)
+            index, x = page.query(key, index, x)
+        typer.echo(x)
+    
+    def all(database):
+        x = PrettyTable()
+        x.field_names = ["Index", "Title"]
+        x.align["Index"] = "r"
+        x.align["Title"] = "l"
+        index, x = page.query(database, x = x)
+        typer.echo(x)
 
-    def all(database, index = 0):
+    def query(database, index = 0, x = PrettyTable):
         r = api_helper.get_pages(api_helper, database)
         pages_dict = {}
 
@@ -22,7 +37,7 @@ class page():
                         path = page.get("properties").get("Name").get("title")
                             
                         if len(path) > 0:
-                            typer.echo("\t" + str(index) + "\t" + path[0].get("text").get("content"))
+                            x.add_row([ str(index), path[0].get("text").get("content")])
                             pages_dict[str(index)] = page
                             index+=1
 
@@ -32,7 +47,7 @@ class page():
 
         file_helper.set(file_helper.pages_file, json.dumps(pages_dict))
 
-        return index
+        return index, x
 
 
     def remove(list_of_indexes):
