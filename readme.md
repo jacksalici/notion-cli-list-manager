@@ -31,14 +31,12 @@ Having installed Python3 and Pip3 on your machine, write on the terminal:
     git clone https://github.com/jacksalici/notion-cli-list-manager.git notion-cli-list-manager
 
     pip3 install notion-cli-list-manager/dist/notion-cli-list-manager-0.1.1.tar.gz
-
 ```
 
 Then set the token and the database id:
 
 ```
     list set --token [token] --id [database-id]
-
 ``` 
 _📌 Note that you must share the database with your integration!_  
 And finally, you can use the commands above.
