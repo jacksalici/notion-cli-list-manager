@@ -1,5 +1,4 @@
 import requests
-import json
 import typer
 import toml
 from pathlib import Path
@@ -8,27 +7,28 @@ from pathlib import Path
 class toml_helper():
     script_location = Path(__file__).absolute().parent
     config_file = script_location / "config.toml"
+    pages_file = script_location / "pages.toml"
 
-    def get_dict():
+    def get_dict(f):
         try:
-            with open(toml_helper.config_file, "r+") as file_text:
+            with open(f, "r+") as file_text:
                 r = toml.load(file_text)
                 return r
         except FileNotFoundError:
-            typer.echo("Config file not found.")
+            typer.echo("File not found.")
         except toml.TomlDecodeError:
-            typer.echo("Config file encoding error.")
+            typer.echo("Fonfig file encoding error.")
         
         return {}
     
-    def set_dict(dict):
-        with open(toml_helper.config_file, "w") as file_text:
+    def set_dict(dict, f):
+        with open(f, "w") as file_text:
             return file_text.write(toml.dumps(dict))
     
     
     def get_db_id (database):
         try:
-            dict = toml_helper.get_dict().get("databases")
+            dict = toml_helper.get_dict(toml_helper.config_file).get("databases")
             return str(dict.get(database).get("id"))
         except:
             return ""
@@ -36,39 +36,15 @@ class toml_helper():
    
     def get_db_keys():
         try:
-            r = toml_helper.get_dict().get("databases")
+            r = toml_helper.get_dict(toml_helper.config_file).get("databases")
             return r.keys()
         except:
             return []
 
 
-
-class file_helper():
-    script_location = Path(__file__).absolute().parent
-
-
-    #token_file = script_location / "token.json" #[obsolete]
-    #config_file = script_location / "config.json" #[obsolete]
-    pages_file = script_location / "pages.json"
-
-    
-    def get_dict(file):
-        try:
-            with open(file, "r+") as file_text:
-                r = json.load(file_text, object_hook=dict)
-                return r
-        except:
-            return {}
-
-    
-    def set(file, text):
-        with open(file, "w") as file_text:
-            return file_text.write(text)
-    
-
 class api_helper():
     api_url_pre = "https://api.notion.com/v1/"
-    NOTION_API_KEY = str(toml_helper.get_dict().get("token"))
+    NOTION_API_KEY = str(toml_helper.get_dict(toml_helper.config_file).get("token"))
     payload = {
         "Authorization": NOTION_API_KEY,
         "Notion-Version": "2021-08-16",
