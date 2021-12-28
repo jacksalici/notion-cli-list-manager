@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "notion-cli-list-manager"
-version = "0.1.1"
+version = "0.1.2"
 description = "A simple line-command tool for managing Notion List Databases."
 authors = ["Jack Salici"]
 license = "MIT"

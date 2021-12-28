@@ -24,13 +24,19 @@ A simple command-line tool for managing [Notion](http://notion.so) ___List___ da
 | `list set --token [token] --id [database_id]` | to set the token and the ID of the Notion Database you want as default. _This must be executed as the first command_. | You can get the `[token]` as internal api integration [here](https://www.notion.so/my-integrations). <br> You can get the database id from the database url: notion.so/[username]/`[database_id]`?v=[view_id].  | 
 ## 🔬 Usage:
 
-Since it is a beta version, the package it's not available on pypi.org yet. Thus, you have to install it manually.
+Although it is a beta version, the package is already downloadable from pypi.org yet.
+
+```
+pip install notion-cli-list-manager
+```
+
+You can also clone the repo to have always the very last version.
 Having installed Python3 and Pip3 on your machine, write on the terminal:
 
 ``` 
     git clone https://github.com/jacksalici/notion-cli-list-manager.git notion-cli-list-manager
 
-    pip3 install notion-cli-list-manager/dist/notion-cli-list-manager-0.1.1.tar.gz
+    pip3 install notion-cli-list-manager/dist/notion-cli-list-manager-0.1.*.tar.gz
 ```
 
 Then set the token and the database id:
