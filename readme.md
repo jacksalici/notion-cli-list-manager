@@ -11,7 +11,7 @@ A simple command-line tool for managing [Notion](http://notion.so) ___List___ da
 - parameters are going to be supported 🎻
 
 ## 👾 Get Started:
-- Create a new internal api integration [here](https://www.notion.so/my-integrations)
+- Create a new internal api integration [here](https://www.notion.so/my-integrations).
 - Share the default database you want to use with your integration.  
   You can copy [my free simple template](https://jacksalici.notion.site/d75c9590dc8b4d62a6c65cbf3fdd1dfb?v=0e3782222f014d7bb3e44a87376e3cfb).
 - Download the tool: [^1]
@@ -22,7 +22,7 @@ A simple command-line tool for managing [Notion](http://notion.so) ___List___ da
 ```
     list set --token [token] --id [database-id]
 ``` 
-- Your done!
+- You're done!
 
 ## 🧰 Syntax:
 
@@ -35,12 +35,11 @@ A simple command-line tool for managing [Notion](http://notion.so) ___List___ da
 | `list set --token [token] --id [database_id]` | to set the token and the ID of the Notion Database you want as default. _This must be executed as the first command_. | You can get the `[token]` as internal api integration [here](https://www.notion.so/my-integrations). <br> You can get the database id from the database url: notion.so/[username]/`[database_id]`?v=[view_id].  | 
 
 ## 🛒 Still to do:
-See the [project tab](https://github.com/jacksalici/notion-cli-list-manager/projects/1) for a complete and real-time-updated list.
+See the [project tab](https://github.com/jacksalici/notion-cli-list-manager/projects/1) for a complete and real-time-updated list.    
+Issues and PRs are really appreciated. 🤝
 
-## 💌 Collaboration:
-Issues and PRs are really appreciated. 
 
-## 🗒 Notes
+
 
 [^1]: You can also clone the repo to have always the very last version.  
 Having installed Python3 and Pip3 on your machine, write on the terminal:  
