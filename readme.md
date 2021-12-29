@@ -4,7 +4,6 @@
 ![](showcase.gif)
 
 A simple command-line tool for managing [Notion](http://notion.so) ___List___ databases. ✨  
- You can copy [my free simple template](https://jacksalici.notion.site/d75c9590dc8b4d62a6c65cbf3fdd1dfb?v=0e3782222f014d7bb3e44a87376e3cfb).
 
 ## 📺 Features:
 - fast and clear; saving your idea is as simple as digit `add "get money"` 💆‍♂️
@@ -13,7 +12,8 @@ A simple command-line tool for managing [Notion](http://notion.so) ___List___ da
 
 ## 👾 Get Started:
 - Create a new internal api integration [here](https://www.notion.so/my-integrations)
-- Share the default database you want to use with your integration.
+- Share the default database you want to use with your integration.  
+  You can copy [my free simple template](https://jacksalici.notion.site/d75c9590dc8b4d62a6c65cbf3fdd1dfb?v=0e3782222f014d7bb3e44a87376e3cfb).
 - Download the tool: [^1]
 ```
     pip install notion-cli-list-manager
@@ -42,14 +42,11 @@ Issues and PRs are really appreciated.
 
 ## 🗒 Notes
 
-[^1]: You can also clone the repo to have always the very last version.
-Having installed Python3 and Pip3 on your machine, write on the terminal:
+[^1]: You can also clone the repo to have always the very last version.  
+Having installed Python3 and Pip3 on your machine, write on the terminal:  
+`git clone https://github.com/jacksalici/notion-cli-list-manager.git notion-cli-list-manager`  
+`pip3 install notion-cli-list-manager/dist/notion-cli-list-manager-[last-version].tar.gz`
 
-``` 
-    git clone https://github.com/jacksalici/notion-cli-list-manager.git notion-cli-list-manager
-
-    pip3 install notion-cli-list-manager/dist/notion-cli-list-manager-0.1.*.tar.gz
-```
 [^2]: During the first set an error could wrongly be displayed, even if all works like a charm. 
 
     
