@@ -14,11 +14,11 @@ A simple command-line tool for managing [Notion](http://notion.so) ___List___ da
 ## 👾 Get Started:
 - Create a new internal api integration [here](https://www.notion.so/my-integrations)
 - Share the default database you want to use with your integration.
-- Download the tool:<sup>1</sup> 
+- Download the tool: [^1]
 ```
     pip install notion-cli-list-manager
 ```
-- Set the token and your default database id:<sup>2</sup>
+- Set the token and your default database id: [^2]
 ```
     list set --token [token] --id [database-id]
 ``` 
@@ -42,7 +42,7 @@ Issues and PRs are really appreciated.
 
 ## 🗒 Notes
 
-1) You can also clone the repo to have always the very last version.
+[^1]: You can also clone the repo to have always the very last version.
 Having installed Python3 and Pip3 on your machine, write on the terminal:
 
 ``` 
@@ -50,6 +50,6 @@ Having installed Python3 and Pip3 on your machine, write on the terminal:
 
     pip3 install notion-cli-list-manager/dist/notion-cli-list-manager-0.1.*.tar.gz
 ```
-2) During the first set an error could wrongly be displayed, even if all works like a charm. 
+[^2]: During the first set an error could wrongly be displayed, even if all works like a charm. 
 
     
