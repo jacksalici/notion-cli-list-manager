@@ -1,9 +1,11 @@
+
+##### ⚠️ This project is still in work in progress, please forgive any little flaw here or there.
 # Notion CLI List Manager 🗂
+A simple command-line tool for managing [Notion](http://notion.so) ___List___ databases. ✨  
+
 ### Increase your productivity with a simple command. 🛋
 
 ![](showcase.gif)
-
-A simple command-line tool for managing [Notion](http://notion.so) ___List___ databases. ✨  
 
 ## 📺 Features:
 - fast and clear; saving your idea is as simple as digit `add "get money"` 💆‍♂️
