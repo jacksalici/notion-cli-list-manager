@@ -9,15 +9,16 @@ class toml_helper():
     config_file = script_location / "config.toml"
     pages_file = script_location / "pages.toml"
 
-    def get_dict(f):
+    def get_dict(f, verbose=False):
         try:
             with open(f, "r+") as file_text:
                 r = toml.load(file_text)
                 return r
         except FileNotFoundError:
-            typer.echo("File not found.")
+            if verbose:
+                typer.echo("File not found.")
         except toml.TomlDecodeError:
-            typer.echo("Fonfig file encoding error.")
+            typer.echo("File encoding error.")
         
         return {}
     
