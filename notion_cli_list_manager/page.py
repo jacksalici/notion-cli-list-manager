@@ -1,3 +1,4 @@
+from os import path
 import typer
 from .utils import api_helper, toml_helper
 from prettytable import PrettyTable
@@ -32,18 +33,23 @@ class page():
         toml_helper.set_dict(pages_dict, toml_helper.pages_file)
 
 
-    def query(database, index = 0, x = PrettyTable, pages_dict = {}):
+    def query(database, index = 0, x = PrettyTable, pages_dict = {}, show_properties=True):
         r = api_helper.get_pages(api_helper, database)
 
         if type(r) is dict:
             if r["object"] == "list":
                 for page in r["results"]:
-                        path = page.get("properties").get("Name").get("title")
-                            
-                        if len(path) > 0:
-                            x.add_row([ str(index), path[0].get("text").get("content")])
-                            pages_dict[str(index)] = page
-                            index+=1
+                        properties = page.get("properties")
+                        for property in properties:
+                            type_of = properties.get(property).get("type")
+                            if type_of == "title":
+                                path=properties.get(property).get("title")
+                                if len(path)>0:
+                                    x.add_row([ str(index), path[0].get("text").get("content")])
+                        
+                        
+                        pages_dict[str(index)] = page
+                        index+=1
 
             elif r["object"] == "error":
                 typer.echo("Error:\t" + str(r["message"]))
