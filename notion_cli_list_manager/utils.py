@@ -1,4 +1,5 @@
 import requests
+from requests.api import request
 import typer
 import toml
 from pathlib import Path
@@ -42,6 +43,12 @@ class toml_helper():
         except:
             return []
 
+    def get_db_prop(database):
+        try:
+            r = toml_helper.get_dict(toml_helper.config_file).get("databases").get(database)["properties"]
+            return r
+        except:
+            return []
 
 class api_helper():
     api_url_pre = "https://api.notion.com/v1/"
@@ -52,8 +59,15 @@ class api_helper():
         "Content-Type": "application/json"
     }
 
+    def get_db_props(self, database):
+        r = self.get_database(self, database).get("properties")
+        if type(r) is dict:
+            return r.keys()
+        else:
+            return []
 
-   
+    def get_database(self, database):
+        return self.api(self, requests.get, "databases/" + database, "")
 
     
     def new_page(self, title, database):
