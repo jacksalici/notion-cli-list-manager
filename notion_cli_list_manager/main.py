@@ -73,7 +73,19 @@ def db(
     elif rm != "":
         page.rm_database(rm)
     else:
-        page.set_database(label, id)
+        properties = page.set_database(label, id)
+        try:
+            typer.echo(page.show_properties(properties))
+            
+            indexes_string = typer.prompt("Insert the ordered list of indexes of the properties you want to display. Eg: \"2,3,0\". Default:",
+                                        default="{}:{}".format(0, len(properties)), type=str)
+            indexes = string_parser(indexes_string)
+            new_prop=[]
+            for index in indexes:
+                new_prop.append(properties[index])
+            page.set_properties(label, new_prop)
+        except:
+            typer.echo("Error during property set.")
     
       
 

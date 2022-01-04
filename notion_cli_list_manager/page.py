@@ -25,7 +25,7 @@ class page():
 
     
     def all(database):
-        properties_list = ["In"] + toml_helper.get_db_prop(database)
+        properties_list = ["Index"] + toml_helper.get_db_prop(database)
         if len(properties_list) ==1:
             properties_list.append("Name")
         
@@ -33,13 +33,15 @@ class page():
         x.max_table_width=round(get_terminal_size().columns*0.8)
         x.field_names = properties_list
         x.align = "l"
+
+        x.min_width["Index"] = 10
         index, x, pages_dict = page.query(database, x = x, properties_list=properties_list)
 
         typer.echo(x)
 
         toml_helper.set_dict(pages_dict, toml_helper.pages_file)
 
-    def query(database, index = 0, x = PrettyTable, pages_dict = {}, show_properties=True, properties_list = ["In", "Name"]):
+    def query(database, index = 0, x = PrettyTable, pages_dict = {}, show_properties=True, properties_list = ["Index", "Name"]):
         r = api_helper.get_pages(api_helper, database)
 
         if type(r) is dict:
@@ -54,7 +56,7 @@ class page():
                             "created_time": "created_time"
                         }
                         row={p:"" for p in properties_list}
-                        row["In"]= "{:4}".format(index)
+                        row["Index"]= (index)
                         for property in properties:
                             if property in row.keys():
                                 type_of = properties.get(property).get("type")
@@ -112,7 +114,7 @@ class page():
         dict["token"] = token
         toml_helper.set_dict(dict, toml_helper.config_file)
 
-    def set_database(key, id, get_tags = True):
+    def set_database(key, id):
         db_dict = toml_helper.get_dict(toml_helper.config_file)
         
         if "databases" not in db_dict.keys():
@@ -120,11 +122,14 @@ class page():
         
         db_dict.get("databases")[key] = {"id": id} 
 
-
-        if get_tags:
-            db_dict.get("databases")[key]["properties"] = api_helper.get_db_props(api_helper, id)
+        properties = api_helper.get_db_props(api_helper, id)
+        db_dict.get("databases")[key]["properties"] = properties
         
         toml_helper.set_dict(db_dict, toml_helper.config_file)
+
+        return list(properties)
+
+
 
     def show_databases():
         list = toml_helper.get_db_keys()
@@ -140,3 +145,16 @@ class page():
         toml_helper.set_dict(dict, toml_helper.config_file)
 
     
+    def show_properties(properties):
+        x = PrettyTable()
+        x.field_names = [i for i in range (0, len(properties))]
+        x.add_row(properties)
+        return x
+    
+    def set_properties(label, properties):
+        db_dict = toml_helper.get_dict(toml_helper.config_file)
+        
+    
+        db_dict.get("databases")[label]["properties"] = properties
+        
+        toml_helper.set_dict(db_dict, toml_helper.config_file)
