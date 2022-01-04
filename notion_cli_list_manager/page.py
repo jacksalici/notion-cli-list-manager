@@ -13,8 +13,8 @@ class page():
     def all_by_all():
         index = 0
         x = PrettyTable()
-        x.field_names = ["i", "Name"]
-        x.align["i"] = "r"
+        x.max_table_width=round(get_terminal_size().columns*0.8)
+        x.field_names = ["Index", "Name"]
         x.align["Name"] = "l"
         pages_dict = {}
         for key in toml_helper.get_db_keys():
@@ -25,22 +25,21 @@ class page():
 
     
     def all(database):
-        properties_list = ["i"] + toml_helper.get_db_prop(database)
+        properties_list = ["In"] + toml_helper.get_db_prop(database)
         if len(properties_list) ==1:
             properties_list.append("Name")
         
         x = PrettyTable()
-        
+        x.max_table_width=round(get_terminal_size().columns*0.8)
         x.field_names = properties_list
         x.align = "l"
-        x.align["i"] = "r"
         index, x, pages_dict = page.query(database, x = x, properties_list=properties_list)
 
         typer.echo(x)
 
         toml_helper.set_dict(pages_dict, toml_helper.pages_file)
 
-    def query(database, index = 0, x = PrettyTable, pages_dict = {}, show_properties=True, properties_list = ["i", "Name"]):
+    def query(database, index = 0, x = PrettyTable, pages_dict = {}, show_properties=True, properties_list = ["In", "Name"]):
         r = api_helper.get_pages(api_helper, database)
 
         if type(r) is dict:
@@ -55,7 +54,7 @@ class page():
                             "created_time": "created_time"
                         }
                         row={p:"" for p in properties_list}
-                        row["i"]= index
+                        row["In"]= "{:4}".format(index)
                         for property in properties:
                             if property in row.keys():
                                 type_of = properties.get(property).get("type")
