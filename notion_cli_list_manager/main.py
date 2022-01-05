@@ -24,6 +24,21 @@ def string_parser(string: str):
 
     return indexes
 
+def set_properties_list(properties, label):
+    try:
+        typer.echo(page.show_properties(properties))
+
+        typer.secho("Insert the ordered list of indexes of the properties you want to display.", bold=True )    
+        indexes_string = typer.prompt("Eg: \"2,3,0\". Default:",
+                                        default="{}:{}".format(0, len(properties)), type=str)
+        indexes = string_parser(indexes_string)
+        new_prop=[]
+        for index in indexes:
+            new_prop.append(properties[index])
+        page.set_properties(label, new_prop)
+    except:
+        typer.secho("Error during property set.", err= True, fg='yellow')
+
 app = typer.Typer()
  
 @app.command()
@@ -55,37 +70,35 @@ def set(
         page.set_token(token)
     
     if id != "":
-        page.set_database("Default", id)
+        properties = page.set_database("Default", id)
+        set_properties_list(properties, "Default")
+
 
 @app.command()
 def db(
     rm: str = typer.Option("", help="Remove a database from the manager.", metavar="LABEL"),
     label: str = typer.Option("", help="Add a database from the manager.", metavar="LABEL"),
-    id: str = typer.Option("", help="The database id.") 
+    id: str = typer.Option("", help="The database id."),
+    prop: str = typer.Option("", help="Set the database properties.", metavar="LABEL")
     ):
     """
     Display the databases saved on the manager. To add or to remove a database here does not cause the actual creation or deletion on Notion. 
     """
-    if rm == "" and label == "" and id == "":
+    if prop != "":
+        properties = page.get_properties(prop)
+        set_properties_list(properties, prop)
+    elif rm == "" and label == "" and id == "" and prop=="":
         page.show_databases()
-    elif rm != "" and (label != "" or id != ""):
-        typer.echo("You cannot remove and add a databese at the same time.")
-    elif rm != "":
+    elif rm != "" and (label != "" or id != "") and prop=="":
+        typer.secho("You cannot remove and add a databese at the same time.", err= True, fg='yellow')
+    elif rm != "" and prop=="":
         page.rm_database(rm)
-    else:
+    elif prop=="":
         properties = page.set_database(label, id)
-        try:
-            typer.echo(page.show_properties(properties))
-            
-            indexes_string = typer.prompt("Insert the ordered list of indexes of the properties you want to display. Eg: \"2,3,0\". Default:",
-                                        default="{}:{}".format(0, len(properties)), type=str)
-            indexes = string_parser(indexes_string)
-            new_prop=[]
-            for index in indexes:
-                new_prop.append(properties[index])
-            page.set_properties(label, new_prop)
-        except:
-            typer.echo("Error during property set.")
+        set_properties_list(properties, label)
+
+    
+
     
       
 

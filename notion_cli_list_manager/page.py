@@ -144,6 +144,8 @@ class page():
         r = dict.get("databases").pop(label)
         toml_helper.set_dict(dict, toml_helper.config_file)
 
+    def get_properties(label):
+        return list(api_helper.get_db_props(api_helper, toml_helper.get_db_id(label)))
     
     def show_properties(properties):
         x = PrettyTable()

@@ -17,9 +17,9 @@ class toml_helper():
                 return r
         except FileNotFoundError:
             if verbose:
-                typer.echo("File not found.")
+                typer.secho("File not found.", err= True, fg='yellow')
         except toml.TomlDecodeError:
-            typer.echo("File encoding error.")
+            typer.secho("File encoding error.", err= True, fg='yellow')
         
         return {}
     
@@ -99,8 +99,8 @@ class api_helper():
             if (r.status_code == 200):
                 return r.json()
             else:
-                typer.echo("Request post error")
+                typer.secho("Request post error", err= True, fg='yellow')
                 return ""
         except:
-            typer.echo("Request post error")
+            typer.secho("Request post error", err= True, fg='yellow')
             return ""
