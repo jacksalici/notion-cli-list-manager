@@ -33,7 +33,6 @@ class page():
         x = PrettyTable()
         x.max_table_width=round(get_terminal_size().columns*0.95)
         x.field_names = properties_list
-
         x.align = "l"
 
         index, x, pages_dict = page.query(database, x = x, properties_list=properties_list)
@@ -120,7 +119,7 @@ class page():
                                 elif type_of == prop_types["formula"]:
                                     path=properties.get(property).get(prop_types["formula"])
                                     if path is not None:
-                                        row[property] = path.get("number")
+                                        row[property] = path.get("string")
                                 #multi-select
                                 elif type_of == prop_types["multi"]:
                                     path=properties.get(property).get(prop_types["multi"])

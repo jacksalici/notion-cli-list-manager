@@ -36,6 +36,8 @@ def set_properties_list(properties, label):
         for index in indexes:
             if properties[index] == "Index":
                 typer.secho("Property cannot be named 'Index', please change it.", err= True, fg='yellow')
+            elif properties[index] in new_prop:
+                typer.secho("Property names must be unique.", err= True, fg='yellow')
             else:
                 new_prop.append(properties[index])
         page.set_properties(label, new_prop)
