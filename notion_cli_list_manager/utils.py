@@ -60,10 +60,16 @@ class api_helper():
     }
 
     def get_db_props(self, database):
-        r = self.get_database(self, database).get("properties")
-        if type(r) is dict:
-            return r.keys()
-        else:
+        r = self.get_database(self, database)
+
+        try:   
+            r = r.get("properties")
+            if type(r) is dict:
+                return r.keys()
+            else:
+                return []
+        except:
+            typer.echo(r)
             return []
 
     def get_database(self, database):

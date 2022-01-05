@@ -213,10 +213,9 @@ class page():
         
         db_dict.get("databases")[key] = {"id": id} 
 
-        properties = api_helper.get_db_props(api_helper, id)
-        db_dict.get("databases")[key]["properties"] = properties
-        
         toml_helper.set_dict(db_dict, toml_helper.config_file)
+        
+        properties = api_helper.get_db_props(api_helper, id)
 
         return list(properties)
 
