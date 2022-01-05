@@ -34,7 +34,10 @@ def set_properties_list(properties, label):
         indexes = string_parser(indexes_string)
         new_prop=[]
         for index in indexes:
-            new_prop.append(properties[index])
+            if properties[index] == "Index":
+                typer.secho("Property cannot be named 'Index', please change it.", err= True, fg='yellow')
+            else:
+                new_prop.append(properties[index])
         page.set_properties(label, new_prop)
     except:
         typer.secho("Error during property set.", err= True, fg='yellow')

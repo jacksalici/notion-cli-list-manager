@@ -25,16 +25,17 @@ class page():
 
     
     def all(database):
+        
         properties_list = ["Index"] + toml_helper.get_db_prop(database)
         if len(properties_list) ==1:
             properties_list.append("Name")
         
         x = PrettyTable()
-        x.max_table_width=round(get_terminal_size().columns*0.8)
+        x.max_table_width=round(get_terminal_size().columns*0.95)
         x.field_names = properties_list
+
         x.align = "l"
 
-        x.min_width["Index"] = 10
         index, x, pages_dict = page.query(database, x = x, properties_list=properties_list)
 
         typer.echo(x)
@@ -53,7 +54,19 @@ class page():
                             "rich": "rich_text",
                             "select": "select",
                             "multi": "multi_select",
-                            "created_time": "created_time"
+                            "created_time": "created_time",
+                            "number": "number",
+                            "url": "url",
+                            "last_edited_time": "last_edited_time",
+                            "checkbox":"checkbox",
+                            "phone":"phone_number",
+                            "mail":"email",
+                            "formula":"formula",
+                            "created_by":"created_by",
+                            "last_edit": "last_edited_by",
+                            "date":"date",
+                            "people":"people",
+                            "files":"files"
                         }
                         row={p:"" for p in properties_list}
                         row["Index"]= (index)
@@ -77,9 +90,54 @@ class page():
                                     path=properties.get(property).get(prop_types["select"])
                                     if path is not None:
                                         row[property] = path.get("name")
+                                #created_by
+                                elif type_of == prop_types["created_by"]:
+                                    path=properties.get(property).get(prop_types["created_by"])
+                                    if path is not None:
+                                        row[property] = path.get("name")
+                                #date
+                                elif type_of == prop_types["date"]:
+                                    path=properties.get(property).get(prop_types["date"])
+                                    full_string = ""
+                                    if path is not None:
+                                        start = path.get("start")
+                                        end = path.get("end")
+                                        if start is not None:
+                                            full_string += str(start)
+                                            if end is not None:
+                                                full_string += " -> "
+
+                                        if end is not None:
+                                            full_string += str(end)                              
+
+                                    row[property] = full_string
+                                #last_edit
+                                elif type_of == prop_types["last_edit"]:
+                                    path=properties.get(property).get(prop_types["last_edit"])
+                                    if path is not None:
+                                        row[property] = path.get("name")
+                                #formula
+                                elif type_of == prop_types["formula"]:
+                                    path=properties.get(property).get(prop_types["formula"])
+                                    if path is not None:
+                                        row[property] = path.get("number")
                                 #multi-select
                                 elif type_of == prop_types["multi"]:
                                     path=properties.get(property).get(prop_types["multi"])
+                                    full_string = ""
+                                    for p in path:
+                                        full_string += p.get("name") + " "
+                                    row[property] = full_string
+                                #files
+                                elif type_of == prop_types["files"]:
+                                    path=properties.get(property).get(prop_types["files"])
+                                    full_string = ""
+                                    for p in path:
+                                        full_string += p.get("name") + " "
+                                    row[property] = full_string
+                                #people
+                                elif type_of == prop_types["people"]:
+                                    path=properties.get(property).get(prop_types["people"])
                                     full_string = ""
                                     for p in path:
                                         full_string += p.get("name") + " "
@@ -88,6 +146,39 @@ class page():
                                 elif type_of == prop_types["created_time"]:
                                     path=properties.get(property).get(prop_types["created_time"])
                                     row[property] = path
+                                #last_edited_time
+                                elif type_of == prop_types["last_edited_time"]:
+                                    path=properties.get(property).get(prop_types["last_edited_time"])
+                                    row[property] = path
+                                #phone
+                                elif type_of == prop_types["phone"]:
+                                    path=properties.get(property).get(prop_types["phone"])
+                                    row[property] = path
+                                 #email
+                                elif type_of == prop_types["mail"]:
+                                    path=properties.get(property).get(prop_types["mail"])
+                                    row[property] = path
+                                #number
+                                elif type_of == prop_types["number"]:
+                                    path=properties.get(property).get(prop_types["number"])
+                                    if path is None:
+                                        row[property] = ""
+                                    else:
+                                        row[property] = path
+                                #checkbox
+                                elif type_of == prop_types["checkbox"]:
+                                    path=properties.get(property).get(prop_types["checkbox"])
+                                    if path is True:
+                                        row[property] = "[x]"
+                                    else:
+                                        row[property] = "[ ]"
+                                #url
+                                elif type_of == prop_types["url"]:
+                                    path=properties.get(property).get(prop_types["url"])
+                                    if path is None:
+                                        row[property] = ""
+                                    else:
+                                        row[property] = path
                                 else:
                                     row[property] = "NS"
 
