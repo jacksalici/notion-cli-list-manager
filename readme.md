@@ -28,7 +28,7 @@ A simple command-line tool for managing [Notion](http://notion.so) ___List___ da
 - You're done!
 
 ## 🧰 Syntax:
-TL;DR: `list` is the keyword for activate this tool from the terminal. Typing just `list`, the list of your default database's items will be shown. Other commands can be use typing `list [command]`
+TL;DR: `list` is the keyword for activating this tool from the terminal. Typing just `list`, the list of your default database's items will be shown. Other commands can be used typing `list [command]`
 
 | Commands:|    | Args and options:|
 |---|---|---|
@@ -43,7 +43,7 @@ See the [project tab](https://github.com/jacksalici/notion-cli-list-manager/proj
 Issues and PRs are appreciated. 🤝
 
 
-[^3]: At the present, properties are fully supported (except Relations and Rolls up that are __NS__ - Not supported) but read only. Writeable ones will be supported in the next versions.
+[^3]: At the present, properties are fully supported (except Relations and Rolls up that are __NS__ - Not supported) but read-only. Writeable ones will be supported in the next versions.
 
 [^1]: You can also clone the repo to have always the very last version.  
 Having installed Python3 and Pip3 on your machine, write on the terminal:  
