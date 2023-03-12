@@ -76,8 +76,9 @@ class api_helper():
         return self.api(self, requests.get, "databases/" + database, "")
 
     
-    def new_page(self, title, database):
-        data = '{"parent":{"database_id":"'+ toml_helper.get_db_id(database) + \
+    def new_page(self, title, database, data=""):
+        if data=="":
+            data = '{"parent":{"database_id":"'+ toml_helper.get_db_id(database) + \
         '"},"properties":{"Name":{"title":[{"text":{"content":"'+title+'"}}]}}}'
         return self.api_post(self, "pages", data)
 
@@ -102,6 +103,7 @@ class api_helper():
     def api(self, function, api_url_post, data):
         try:
             r = function(self.api_url_pre + api_url_post, headers=self.payload, data=data)
+            print(r)
             if (r.status_code == 200):
                 return r.json()
             else:

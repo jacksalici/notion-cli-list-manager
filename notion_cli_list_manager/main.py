@@ -55,6 +55,15 @@ def add(title: str = typer.Argument(..., help="The title of the page."),
     page.add(title, db)
 
 @app.command()
+def gen(title: str = typer.Argument(..., help="The title of all the pages."),
+        db: str = typer.Option("Default", help="To add the page to a custom database (Leave the option blank and the default database will be used.)", show_default=False),
+        year: str = typer.Option("2023",help="Year to generate")):
+    """
+    Generate a page for each day of the 2022, all named [TITLE], and saved in [DB]
+    """
+    page.generate_year_pages(title, db, year)
+
+@app.command()
 def rm(string_of_index: str = typer.Argument(..., metavar="INDEX", help="The index of the page to remove.")):
     """
     Remove a database entry. Use this after the "list" command.

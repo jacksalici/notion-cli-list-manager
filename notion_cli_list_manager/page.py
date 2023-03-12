@@ -2,6 +2,7 @@ from os import get_terminal_size
 import typer
 from .utils import api_helper, toml_helper
 from prettytable import PrettyTable
+import time
 
 
 
@@ -217,6 +218,23 @@ class page():
         properties = api_helper.get_db_props(api_helper, id)
 
         return list(properties)
+
+    def generate_year_pages(title, database, year):
+        
+        months_lenghts = [31,28,31,30,31,30,31,31,30,31,30,31]
+
+        for month in range(1,13):
+            for day in range (1, months_lenghts[month-1]+1):
+                date = "{:s}-{:02d}-{:02d}".format(year, month, day)
+                if title == "d4t35":
+                    t = date
+                else:
+                    t = title
+                load = '{"parent":{"database_id":"'+ toml_helper.get_db_id(database) + \
+        '"},"properties":{"Name":{"title":[{"text":{"content":"'+t+'"}}]},"Date":{"date":{"start":"'+ date +'"}}}}'
+                api_helper.new_page(api_helper, title, toml_helper.get_db_id(database), load)
+                print (date)
+                time.sleep(0.5)
 
 
 
