@@ -1,269 +1,308 @@
 from os import get_terminal_size
-import typer
-from .utils import api_helper, toml_helper
-from prettytable import PrettyTable
 import time
+import typer
+from prettytable import PrettyTable
+from .utils import TomlHelper, NotionAPI
 
 
-
-class page():
-
-    def add(title, database):
-        api_helper.new_page(api_helper, title, database)
-
-    def all_by_all():
-        index = 0
-        x = PrettyTable()
-        x.max_table_width=round(get_terminal_size().columns*0.8)
-        x.field_names = ["Index", "Name"]
-        x.align["Name"] = "l"
-        pages_dict = {}
-        for key in toml_helper.get_db_keys():
-            index, x, pages_dict = page.query(key, index, x, pages_dict)
-        typer.echo(x)
-
-        toml_helper.set_dict(pages_dict, toml_helper.pages_file)
-
+class NotionPage:
+    """Class to handle Notion page operations."""
     
-    def all(database):
+    def __init__(self):
+        self.api = NotionAPI()
+    
+    def add(self, title, database):
+        """Add a new page to the database."""
+        database_id = TomlHelper.get_db_id(database)
+        if not database_id:
+            typer.secho(f"Database '{database}' not found.", err=True, fg='yellow')
+            return
+            
+        return self.api.new_page(title, database_id)
+
+    def all_by_all(self):
+        """Display pages from all databases."""
+        index = 0
+        table = PrettyTable()
+        table.max_table_width = round(get_terminal_size().columns * 0.8)
+        table.field_names = ["Index", "Name"]
+        table.align["Name"] = "l"
+        pages_dict = {}
         
-        properties_list = ["Index"] + toml_helper.get_db_prop(database)
-        if len(properties_list) ==1:
+        for key in TomlHelper.get_db_keys():
+            index, table, pages_dict = self._query_database(key, index, table, pages_dict)
+        
+        typer.echo(table)
+        TomlHelper.set_dict(pages_dict, TomlHelper.PAGES_FILE)
+
+    def all(self, database):
+        """Display pages from a specific database."""
+        properties_list = ["Index"] + TomlHelper.get_db_prop(database)
+        if len(properties_list) == 1:
             properties_list.append("Name")
         
-        x = PrettyTable()
-        x.max_table_width=round(get_terminal_size().columns*0.95)
-        x.field_names = properties_list
-        x.align = "l"
+        table = PrettyTable()
+        table.max_table_width = round(get_terminal_size().columns * 0.95)
+        table.field_names = properties_list
+        table.align = "l"
 
-        index, x, pages_dict = page.query(database, x = x, properties_list=properties_list)
+        _, table, pages_dict = self._query_database(database, table=table, properties_list=properties_list)
+        
+        typer.echo(table)
+        TomlHelper.set_dict(pages_dict, TomlHelper.PAGES_FILE)
 
-        typer.echo(x)
+    def _query_database(self, database, index=0, table=None, pages_dict=None, properties_list=None):
+        """Query and process pages from a database."""
+        if table is None:
+            table = PrettyTable()
+            table.field_names = ["Index", "Name"]
+            table.align["Name"] = "l"
+        
+        if pages_dict is None:
+            pages_dict = {}
+            
+        if properties_list is None:
+            properties_list = ["Index", "Name"]
+        
+        database_id = TomlHelper.get_db_id(database)
+        if not database_id:
+            return index, table, pages_dict
+            
+        response = self.api.get_pages(database_id)
 
-        toml_helper.set_dict(pages_dict, toml_helper.pages_file)
+        if not isinstance(response, dict) or response.get("object") != "list":
+            if isinstance(response, dict) and response.get("object") == "error":
+                typer.echo(f"Error: {response.get('message', 'Unknown error')}")
+            return index, table, pages_dict
 
-    def query(database, index = 0, x = PrettyTable, pages_dict = {}, show_properties=True, properties_list = ["Index", "Name"]):
-        r = api_helper.get_pages(api_helper, database)
+        for page in response.get("results", []):
+            row_data = self._extract_property_values(page, properties_list, index)
+            table.add_row(row_data.values())
+            pages_dict[str(index)] = page
+            index += 1
 
-        if type(r) is dict:
-            if r["object"] == "list":
-                for page in r["results"]:
-                        properties = page.get("properties")
-                        prop_types = {
-                            "title": "title",
-                            "rich": "rich_text",
-                            "select": "select",
-                            "multi": "multi_select",
-                            "created_time": "created_time",
-                            "number": "number",
-                            "url": "url",
-                            "last_edited_time": "last_edited_time",
-                            "checkbox":"checkbox",
-                            "phone":"phone_number",
-                            "mail":"email",
-                            "formula":"formula",
-                            "created_by":"created_by",
-                            "last_edit": "last_edited_by",
-                            "date":"date",
-                            "people":"people",
-                            "files":"files"
-                        }
-                        row={p:"" for p in properties_list}
-                        row["Index"]= (index)
-                        for property in properties:
-                            if property in row.keys():
-                                type_of = properties.get(property).get("type")
-                                #title
-                                if type_of == prop_types["title"]:
-                                    path=properties.get(property).get(prop_types["title"])
-                                    if len(path)>0:
-                                        row[property] = path[0].get("text").get("content")
-                                #rich-text
-                                elif type_of == prop_types["rich"]:
-                                    path=properties.get(property).get(prop_types["rich"])
-                                    full_string = ""
-                                    for p in path:
-                                        full_string += p.get("plain_text")
-                                    row[property] = full_string
-                                #select
-                                elif type_of == prop_types["select"]:
-                                    path=properties.get(property).get(prop_types["select"])
-                                    if path is not None:
-                                        row[property] = path.get("name")
-                                #created_by
-                                elif type_of == prop_types["created_by"]:
-                                    path=properties.get(property).get(prop_types["created_by"])
-                                    if path is not None:
-                                        row[property] = path.get("name")
-                                #date
-                                elif type_of == prop_types["date"]:
-                                    path=properties.get(property).get(prop_types["date"])
-                                    full_string = ""
-                                    if path is not None:
-                                        start = path.get("start")
-                                        end = path.get("end")
-                                        if start is not None:
-                                            full_string += str(start)
-                                            if end is not None:
-                                                full_string += " -> "
+        return index, table, pages_dict
 
-                                        if end is not None:
-                                            full_string += str(end)                              
+    def _extract_property_values(self, page, properties_list, index):
+        """Extract property values from a page."""
+        properties = page.get("properties", {})
+        row = {p: "" for p in properties_list}
+        row["Index"] = index
+        
+        property_handlers = {
+            "title": self._handle_title_property,
+            "rich_text": self._handle_rich_text_property,
+            "select": self._handle_select_property,
+            "multi_select": self._handle_multi_select_property,
+            "created_time": self._handle_simple_property,
+            "number": self._handle_simple_property,
+            "url": self._handle_simple_property,
+            "last_edited_time": self._handle_simple_property,
+            "checkbox": self._handle_checkbox_property,
+            "phone_number": self._handle_simple_property,
+            "email": self._handle_simple_property,
+            "formula": self._handle_formula_property,
+            "created_by": self._handle_person_property,
+            "last_edited_by": self._handle_person_property,
+            "date": self._handle_date_property,
+            "people": self._handle_people_property,
+            "files": self._handle_files_property
+        }
+        
+        for property_name, property_data in properties.items():
+            if property_name in row:
+                property_type = property_data.get("type", "")
+                if property_type in property_handlers:
+                    row[property_name] = property_handlers[property_type](property_data, property_type)
+        
+        return row
 
-                                    row[property] = full_string
-                                #last_edit
-                                elif type_of == prop_types["last_edit"]:
-                                    path=properties.get(property).get(prop_types["last_edit"])
-                                    if path is not None:
-                                        row[property] = path.get("name")
-                                #formula
-                                elif type_of == prop_types["formula"]:
-                                    path=properties.get(property).get(prop_types["formula"])
-                                    if path is not None:
-                                        row[property] = path.get("string")
-                                #multi-select
-                                elif type_of == prop_types["multi"]:
-                                    path=properties.get(property).get(prop_types["multi"])
-                                    full_string = ""
-                                    for p in path:
-                                        full_string += p.get("name") + " "
-                                    row[property] = full_string
-                                #files
-                                elif type_of == prop_types["files"]:
-                                    path=properties.get(property).get(prop_types["files"])
-                                    full_string = ""
-                                    for p in path:
-                                        full_string += p.get("name") + " "
-                                    row[property] = full_string
-                                #people
-                                elif type_of == prop_types["people"]:
-                                    path=properties.get(property).get(prop_types["people"])
-                                    full_string = ""
-                                    for p in path:
-                                        full_string += p.get("name") + " "
-                                    row[property] = full_string
-                                #created_time
-                                elif type_of == prop_types["created_time"]:
-                                    path=properties.get(property).get(prop_types["created_time"])
-                                    row[property] = path
-                                #last_edited_time
-                                elif type_of == prop_types["last_edited_time"]:
-                                    path=properties.get(property).get(prop_types["last_edited_time"])
-                                    row[property] = path
-                                #phone
-                                elif type_of == prop_types["phone"]:
-                                    path=properties.get(property).get(prop_types["phone"])
-                                    row[property] = path
-                                 #email
-                                elif type_of == prop_types["mail"]:
-                                    path=properties.get(property).get(prop_types["mail"])
-                                    row[property] = path
-                                #number
-                                elif type_of == prop_types["number"]:
-                                    path=properties.get(property).get(prop_types["number"])
-                                    if path is None:
-                                        row[property] = ""
-                                    else:
-                                        row[property] = path
-                                #checkbox
-                                elif type_of == prop_types["checkbox"]:
-                                    path=properties.get(property).get(prop_types["checkbox"])
-                                    if path is True:
-                                        row[property] = "[x]"
-                                    else:
-                                        row[property] = "[ ]"
-                                #url
-                                elif type_of == prop_types["url"]:
-                                    path=properties.get(property).get(prop_types["url"])
-                                    if path is None:
-                                        row[property] = ""
-                                    else:
-                                        row[property] = path
-                                else:
-                                    row[property] = "NS"
+    def _handle_title_property(self, property_data, property_type):
+        path = property_data.get(property_type, [])
+        if path and len(path) > 0:
+            return path[0].get("text", {}).get("content", "")
+        return ""
 
-                        x.add_row(row.values())    
-                        pages_dict[str(index)] = page
-                        index+=1
+    def _handle_rich_text_property(self, property_data, property_type):
+        path = property_data.get(property_type, [])
+        return "".join(p.get("plain_text", "") for p in path)
 
-            elif r["object"] == "error":
-                typer.echo("Error:\t" + str(r["message"]))
-                
+    def _handle_select_property(self, property_data, property_type):
+        path = property_data.get(property_type)
+        if path:
+            return path.get("name", "")
+        return ""
 
-        return index, x, pages_dict
+    def _handle_multi_select_property(self, property_data, property_type):
+        path = property_data.get(property_type, [])
+        return " ".join(p.get("name", "") for p in path)
 
+    def _handle_simple_property(self, property_data, property_type):
+        value = property_data.get(property_type)
+        return str(value) if value is not None else ""
 
-    def remove(list_of_indexes):
-        pages_dict = toml_helper.get_dict(toml_helper.pages_file)
+    def _handle_checkbox_property(self, property_data, property_type):
+        value = property_data.get(property_type)
+        return "[x]" if value is True else "[ ]"
+
+    def _handle_formula_property(self, property_data, property_type):
+        path = property_data.get(property_type)
+        if path:
+            return path.get("string", "")
+        return ""
+
+    def _handle_person_property(self, property_data, property_type):
+        path = property_data.get(property_type)
+        if path:
+            return path.get("name", "")
+        return ""
+
+    def _handle_date_property(self, property_data, property_type):
+        path = property_data.get(property_type)
+        if not path:
+            return ""
+            
+        result = ""
+        start = path.get("start")
+        end = path.get("end")
+        
+        if start:
+            result += str(start)
+            if end:
+                result += " -> "
+        if end:
+            result += str(end)
+            
+        return result
+
+    def _handle_people_property(self, property_data, property_type):
+        path = property_data.get(property_type, [])
+        return " ".join(p.get("name", "") for p in path)
+
+    def _handle_files_property(self, property_data, property_type):
+        path = property_data.get(property_type, [])
+        return " ".join(p.get("name", "") for p in path)
+
+    def remove(self, list_of_indexes):
+        """Remove pages by their indexes."""
+        pages_dict = TomlHelper.get_dict(TomlHelper.PAGES_FILE)
         for index in list_of_indexes:
-            p = pages_dict.get(str(index))
-            if type(p) == dict:
-                api_helper.remove_page(api_helper, p.get("id"))
+            page = pages_dict.get(str(index))
+            if isinstance(page, dict) and "id" in page:
+                self.api.remove_page(page.get("id"))
+                typer.echo(f"Removed page with index {index}")
 
-    def set_token(token):
-        dict = toml_helper.get_dict(toml_helper.config_file)
-        dict["token"] = token
-        toml_helper.set_dict(dict, toml_helper.config_file)
+    def set_token(self, token):
+        """Set the Notion API token."""
+        config = TomlHelper.get_dict(TomlHelper.CONFIG_FILE)
+        config["token"] = token
+        if TomlHelper.set_dict(config, TomlHelper.CONFIG_FILE):
+            typer.echo("Token set successfully")
+        else:
+            typer.secho("Failed to set token", err=True, fg='yellow')
 
-    def set_database(key, id):
-        db_dict = toml_helper.get_dict(toml_helper.config_file)
+    def set_database(self, key, database_id):
+        """Add a database to the config."""
+        config = TomlHelper.get_dict(TomlHelper.CONFIG_FILE)
         
-        if "databases" not in db_dict.keys():
-            db_dict["databases"] = {}
+        if "databases" not in config:
+            config["databases"] = {}
         
-        db_dict.get("databases")[key] = {"id": id} 
-
-        toml_helper.set_dict(db_dict, toml_helper.config_file)
+        config["databases"][key] = {"id": database_id}
         
-        properties = api_helper.get_db_props(api_helper, id)
-
+        if not TomlHelper.set_dict(config, TomlHelper.CONFIG_FILE):
+            typer.secho("Failed to save database configuration", err=True, fg='yellow')
+            return []
+        
+        properties = self.api.get_db_props(database_id)
         return list(properties)
 
-    def generate_year_pages(title, database, year):
+    def generate_year_pages(self, title, database, year):
+        """Generate pages for each day of the year."""
+        database_id = TomlHelper.get_db_id(database)
+        if not database_id:
+            typer.secho(f"Database '{database}' not found.", err=True, fg='yellow')
+            return
+            
+        months_lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
         
-        months_lenghts = [31,28,31,30,31,30,31,31,30,31,30,31]
+        # Check for leap year
+        if int(year) % 4 == 0 and (int(year) % 100 != 0 or int(year) % 400 == 0):
+            months_lengths[1] = 29
+            
+        total_days = sum(months_lengths)
+        with typer.progressbar(length=total_days, label="Generating pages") as progress:
+            for month in range(1, 13):
+                for day in range(1, months_lengths[month-1] + 1):
+                    date = f"{year}-{month:02d}-{day:02d}"
+                    page_title = date if title == "d4t35" else title
+                    
+                    data = (
+                        '{"parent":{"database_id":"' + database_id + 
+                        '"},"properties":{"Name":{"title":[{"text":{"content":"' + page_title + 
+                        '"}}]},"Date":{"date":{"start":"' + date + '"}}}}'
+                    )
+                    
+                    self.api.new_page(page_title, database_id, data)
+                    progress.update(1)
+                    time.sleep(0.5)  # Rate limiting to avoid API limits
 
-        for month in range(1,13):
-            for day in range (1, months_lenghts[month-1]+1):
-                date = "{:s}-{:02d}-{:02d}".format(year, month, day)
-                if title == "d4t35":
-                    t = date
-                else:
-                    t = title
-                load = '{"parent":{"database_id":"'+ toml_helper.get_db_id(database) + \
-        '"},"properties":{"Name":{"title":[{"text":{"content":"'+t+'"}}]},"Date":{"date":{"start":"'+ date +'"}}}}'
-                api_helper.new_page(api_helper, title, toml_helper.get_db_id(database), load)
-                print (date)
-                time.sleep(0.5)
+    def show_databases(self):
+        """Display all databases in the config."""
+        db_list = TomlHelper.get_db_keys()
+        if not db_list:
+            typer.echo("No databases configured.")
+            return
+            
+        table = PrettyTable()
+        table.field_names = ["Label"]
+        for label in db_list:
+            table.add_row([label])
+        typer.echo(table)
 
+    def rm_database(self, label):
+        """Remove a database from the config."""
+        config = TomlHelper.get_dict(TomlHelper.CONFIG_FILE)
+        if "databases" not in config or label not in config["databases"]:
+            typer.secho(f"Database '{label}' not found.", err=True, fg='yellow')
+            return
+            
+        config["databases"].pop(label)
+        if TomlHelper.set_dict(config, TomlHelper.CONFIG_FILE):
+            typer.echo(f"Database '{label}' removed from configuration")
+        else:
+            typer.secho("Failed to update configuration", err=True, fg='yellow')
 
-
-    def show_databases():
-        list = toml_helper.get_db_keys()
-        x = PrettyTable()
-        x.field_names = ["Label"]
-        for label in list:
-            x.add_row([label])
-        typer.echo(x)
-
-    def rm_database(label):
-        dict = toml_helper.get_dict(toml_helper.config_file)
-        r = dict.get("databases").pop(label)
-        toml_helper.set_dict(dict, toml_helper.config_file)
-
-    def get_properties(label):
-        return list(api_helper.get_db_props(api_helper, toml_helper.get_db_id(label)))
+    def get_properties(self, label):
+        """Get properties for a database."""
+        database_id = TomlHelper.get_db_id(label)
+        if not database_id:
+            typer.secho(f"Database '{label}' not found.", err=True, fg='yellow')
+            return []
+            
+        return list(self.api.get_db_props(database_id))
     
-    def show_properties(properties):
-        x = PrettyTable()
-        x.field_names = [i for i in range (0, len(properties))]
-        x.add_row(properties)
-        return x
+    def show_properties(self, properties):
+        """Display properties in a table."""
+        table = PrettyTable()
+        table.field_names = [i for i in range(0, len(properties))]
+        table.add_row(properties)
+        return table
     
-    def set_properties(label, properties):
-        db_dict = toml_helper.get_dict(toml_helper.config_file)
+    def set_properties(self, label, properties):
+        """Set properties for a database in the config."""
+        config = TomlHelper.get_dict(TomlHelper.CONFIG_FILE)
         
-    
-        db_dict.get("databases")[label]["properties"] = properties
+        if "databases" not in config or label not in config["databases"]:
+            typer.secho(f"Database '{label}' not found.", err=True, fg='yellow')
+            return
+            
+        config["databases"][label]["properties"] = properties
         
-        toml_helper.set_dict(db_dict, toml_helper.config_file)
+        if TomlHelper.set_dict(config, TomlHelper.CONFIG_FILE):
+            typer.echo(f"Properties set for database '{label}'")
+        else:
+            typer.secho("Failed to update properties", err=True, fg='yellow')
+
+# Create an instance to be imported by other modules
+page = NotionPage()

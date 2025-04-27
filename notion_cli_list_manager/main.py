@@ -1,142 +1,168 @@
 #!/usr/bin/env python3
 import typer
+from typing import Optional
 from .page import page
 
-def string_parser(string: str):
+app = typer.Typer(help="Notion CLI List Manager - manage Notion databases and pages from the command line.")
 
-    pars_raw = string.split(',')
-
-    indexes = []
-
-    for pars_temp in pars_raw:
-        pars = pars_temp.split(':')
-
-        if len(pars) == 1:
-            indexes.append(int(pars[0]))
-        else:
-  
-            if len(pars) == 2:
-                pars.append('1')
+def parse_index_string(string: str) -> list[int]:
+    """Parse a string of indices into a list of integers.
+    
+    Examples:
+        "1,2,3" -> [1, 2, 3]
+        "1:5" -> [1, 2, 3, 4]
+        "1:10:2" -> [1, 3, 5, 7, 9]
+    """
+    indices = []
+    
+    for segment in string.split(','):
+        parts = segment.split(':')
         
-            pars = [int(i) for i in pars]
-            for i in range(pars[0], pars[1], pars[2]):
-                indexes.append(i)
+        if len(parts) == 1:
+            # Single index
+            indices.append(int(parts[0]))
+        else:
+            # Range with optional step
+            start = int(parts[0])
+            end = int(parts[1])
+            step = int(parts[2]) if len(parts) >= 3 else 1
+            
+            indices.extend(range(start, end, step))
+    
+    return indices
 
-    return indexes
-
-def set_properties_list(properties, label):
+def show_and_select_properties(properties: list, label: str) -> None:
+    """Display properties and prompt user to select which ones to use."""
     try:
+        # Show the available properties
         typer.echo(page.show_properties(properties))
-
-        typer.secho("Insert the ordered list of indexes of the properties you want to display.", bold=True )    
-        indexes_string = typer.prompt("Eg: \"2,3,0\". Default:",
-                                        default="{}:{}".format(0, len(properties)), type=str)
-        indexes = string_parser(indexes_string)
-        new_prop=[]
-        for index in indexes:
-            if properties[index] == "Index":
-                typer.secho("Property cannot be named 'Index', please change it.", err= True, fg='yellow')
-            elif properties[index] in new_prop:
-                typer.secho("Property names must be unique.", err= True, fg='yellow')
+        
+        # Prompt user for selection
+        typer.secho("Insert the ordered list of indexes of the properties you want to display.", bold=True)
+        prompt_msg = "Eg: \"2,3,0\". Default:"
+        default_val = f"0:{len(properties)}"
+        indices_string = typer.prompt(prompt_msg, default=default_val, type=str)
+        
+        # Parse and validate selection
+        indices = parse_index_string(indices_string)
+        new_properties = []
+        
+        for index in indices:
+            if index < 0 or index >= len(properties):
+                typer.secho(f"Index {index} is out of bounds.", err=True, fg='yellow')
+                continue
+                
+            property_name = properties[index]
+            
+            if property_name == "Index":
+                typer.secho("Property cannot be named 'Index', please change it.", err=True, fg='yellow')
+            elif property_name in new_properties:
+                typer.secho("Property names must be unique.", err=True, fg='yellow')
             else:
-                new_prop.append(properties[index])
-        page.set_properties(label, new_prop)
-    except:
-        typer.secho("Error during property set.", err= True, fg='yellow')
+                new_properties.append(property_name)
+        
+        # Save the selected properties
+        if new_properties:
+            page.set_properties(label, new_properties)
+            typer.echo(f"Selected {len(new_properties)} properties for database '{label}'")
+        else:
+            typer.secho("No valid properties selected.", err=True, fg='yellow')
+            
+    except Exception as e:
+        typer.secho(f"Error during property selection: {e}", err=True, fg='yellow')
 
-app = typer.Typer()
- 
 @app.command()
-def add(title: str = typer.Argument(..., help="The title of the page."),
-        db: str = typer.Option("Default", help="To add the page to a custom database (Leave the option blank and the default database will be used.)", show_default=False)):
-    """
-    Add an entry to your database.
-    """
+def add(
+    title: str = typer.Argument(..., help="The title of the page."),
+    db: str = typer.Option("Default", help="Database to add the page to (default: Default)")
+):
+    """Add a new page to a Notion database."""
     page.add(title, db)
+    typer.echo(f"Added page '{title}' to database '{db}'")
 
 @app.command()
-def gen(title: str = typer.Argument(..., help="The title of all the pages."),
-        db: str = typer.Option("Default", help="To add the page to a custom database (Leave the option blank and the default database will be used.)", show_default=False),
-        year: str = typer.Option("2023",help="Year to generate")):
-    """
-    Generate a page for each day of the 2022, all named [TITLE], and saved in [DB]
-    """
+def gen(
+    title: str = typer.Argument(..., help="Base title for generated pages"),
+    db: str = typer.Option("Default", help="Database to add pages to (default: Default)"),
+    year: str = typer.Option("2023", help="Year to generate pages for")
+):
+    """Generate pages for each day of a year."""
+    typer.echo(f"Generating daily pages for {year} with title base '{title}'")
     page.generate_year_pages(title, db, year)
 
 @app.command()
-def rm(string_of_index: str = typer.Argument(..., metavar="INDEX", help="The index of the page to remove.")):
-    """
-    Remove a database entry. Use this after the "list" command.
-    """
-    page.remove(string_parser(string_of_index))
+def rm(
+    string_of_index: str = typer.Argument(..., metavar="INDEX", help="Index or range of indices to remove (e.g., '1,2,3' or '1:5')")
+):
+    """Remove pages by their index."""
+    indices = parse_index_string(string_of_index)
+    if indices:
+        typer.echo(f"Removing pages with indices: {indices}")
+        page.remove(indices)
+    else:
+        typer.secho("No valid indices provided.", err=True, fg='yellow')
 
 @app.command()
 def set(
-        token: str = typer.Option("", help="The API token"),
-        id: str = typer.Option("", help="The database id")
-    ):
-    """
-    Set the personal Notion API Token and the default Database id.  
-    """
-
-    
-    if token != "":
+    token: str = typer.Option("", help="Notion API token"),
+    id: str = typer.Option("", help="Default database ID")
+):
+    """Set Notion API token and default database ID."""
+    if token:
         page.set_token(token)
+        typer.echo("API token has been set")
     
-    if id != "":
+    if id:
         properties = page.set_database("Default", id)
-        set_properties_list(properties, "Default")
-
+        if properties:
+            show_and_select_properties(properties, "Default")
 
 @app.command()
 def db(
-    rm: str = typer.Option("", help="Remove a database from the manager.", metavar="LABEL"),
-    label: str = typer.Option("", help="Add a database from the manager.", metavar="LABEL"),
-    id: str = typer.Option("", help="The database id."),
-    prop: str = typer.Option("", help="Set the database properties.", metavar="LABEL")
-    ):
-    """
-    Display the databases saved on the manager. To add or to remove a database here does not cause the actual creation or deletion on Notion. 
-    """
-    if prop != "":
-        properties = page.get_properties(prop)
-        set_properties_list(properties, prop)
-    elif rm == "" and label == "" and id == "" and prop=="":
-        page.show_databases()
-    elif rm != "" and (label != "" or id != "") and prop=="":
-        typer.secho("You cannot remove and add a databese at the same time.", err= True, fg='yellow')
-    elif rm != "" and prop=="":
+    rm: str = typer.Option("", help="Remove a database by label"),
+    label: str = typer.Option("", help="Label for adding a new database"),
+    id: str = typer.Option("", help="ID for adding a new database"),
+    prop: str = typer.Option("", help="Set properties for a database")
+):
+    """Manage databases in the configuration."""
+    # Validate inputs to prevent conflicts
+    options_count = sum(1 for opt in [rm, label, prop] if opt)
+    
+    if options_count > 1:
+        typer.secho("Please use only one option at a time.", err=True, fg='yellow')
+        return
+    
+    # Handle different operations
+    if rm:
         page.rm_database(rm)
-    elif prop=="":
+    elif label and id:
         properties = page.set_database(label, id)
-        set_properties_list(properties, label)
-
-    
-
-    
-      
+        if properties:
+            show_and_select_properties(properties, label)
+    elif prop:
+        properties = page.get_properties(prop)
+        if properties:
+            show_and_select_properties(properties, prop)
+    else:
+        # Default: show all databases
+        page.show_databases()
 
 @app.callback(invoke_without_command=True)
-def main(ctx: typer.Context,
-        db: str = typer.Option("Default", help="Display the list for a specific database"),
-        all: bool = typer.Option(False, help="Display all the lists.")):
+def main(
+    ctx: typer.Context,
+    db: str = typer.Option("Default", help="Display pages for a specific database"),
+    all: bool = typer.Option(False, help="Display pages from all databases")
+):
     """
-    The Notion Cli List Manager allows you to manage - as you can imagine - Notion Lists.
-    Use the set command to initialize the token and the default database id.
+    Notion CLI List Manager - manage your Notion databases and pages from the command line.
+    
+    Use the 'set' command to initialize with your API token and default database ID.
     """
     if ctx.invoked_subcommand is None:
-        if(all):
-            page.all_by_all()    
+        if all:
+            page.all_by_all()
         else:
             page.all(db)
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
     app()
-
-
-
-
-
-
-
