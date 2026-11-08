@@ -101,7 +101,7 @@ class api_helper():
 
     def api(self, function, api_url_post, data):
         try:
-            r = function(self.api_url_pre + api_url_post, headers=self.payload, data=data)
+            r = function(self.api_url_pre + api_url_post, headers=self.payload, data=data, timeout=30)
             if (r.status_code == 200):
                 return r.json()
             else:
