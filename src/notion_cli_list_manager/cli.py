@@ -15,7 +15,7 @@ app = typer.Typer(
     pretty_exceptions_show_locals=False,
 )
 
-Db = Annotated[str, typer.Option(help="Database label.")]
+Db = Annotated[str | None, typer.Option(help="Database label (default: Default, else the first).")]
 
 
 class State:
@@ -81,7 +81,7 @@ def show(state: State, labels: list[str], columns: list[str]) -> None:
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
-    db: Db = "Default",
+    db: Db = None,
     all_: Annotated[bool, typer.Option("--all", help="Show every database.")] = False,
 ):
     """Manage Notion databases from the command line."""
@@ -91,14 +91,16 @@ def main(
     if all_:
         show(state, list(state.config.databases), ["Name"])
     else:
-        show(state, [db], state.config.database(db).get("properties") or ["Name"])
+        label = state.config.resolve(db)
+        show(state, [label], state.config.databases[label].get("properties") or ["Name"])
 
 
 @app.command()
-def add(ctx: typer.Context, title: str, db: Db = "Default"):
+def add(ctx: typer.Context, title: str, db: Db = None):
     """Add a page."""
-    ctx.obj.client.create_page(ctx.obj.config.database(db)["id"], title)
-    typer.echo(f"Added '{title}' to '{db}'.")
+    label = ctx.obj.config.resolve(db)
+    ctx.obj.client.create_page(ctx.obj.config.databases[label]["id"], title)
+    typer.echo(f"Added '{title}' to '{label}'.")
 
 
 @app.command()
@@ -125,8 +127,7 @@ def set_(
     """Set the token and the default database."""
     if token:
         ctx.obj.config.token = token
-        ctx.obj.config.save()
-        typer.echo("Token saved.")
+        typer.echo("Token saved to the system keyring.")
     if id:
         save_database(ctx.obj, "Default", id)
 
@@ -162,7 +163,7 @@ def db(
 def gen(
     ctx: typer.Context,
     title: Annotated[str | None, typer.Argument(help="Page title (default: the date).")] = None,
-    db: Db = "Default",
+    db: Db = None,
     year: int = date.today().year,
     delay: Annotated[float, typer.Option(help="Seconds between requests.")] = 0.4,
 ):

@@ -69,9 +69,10 @@ def test_rm_invalid_indices(invoke):
     assert invoke("rm", "x").exit_code == 2
 
 
-def test_set_token_persists(invoke, state):
+def test_set_token_goes_to_keyring_not_file(invoke, state, memory_keyring):
     assert invoke("set", "--token", "new").exit_code == 0
-    assert Config(state.config.path).token == "new"
+    assert memory_keyring.store == {("notion-cli-list-manager", "token"): "new"}
+    assert "new" not in state.config.path.read_text()
 
 
 def test_set_id_prompts_for_properties(invoke, client, state):
@@ -126,3 +127,12 @@ def test_run_reports_errors(monkeypatch, capsys, error):
         cli.run()
     assert exit_info.value.code == 1
     assert "Error: boom" in capsys.readouterr().err
+
+
+def test_without_default_database_the_first_is_used(invoke, client, state):
+    del state.config.databases["Default"]
+    client.pages["db2"] = [make_page("w", "Work item")]
+    assert "Work item" in invoke().output
+    result = invoke("add", "Task")
+    assert result.exit_code == 0 and "to 'Work'" in result.output
+    assert client.created == [("db2", "Task", {})]

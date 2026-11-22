@@ -1,4 +1,6 @@
+import keyring
 import pytest
+from keyring.backend import KeyringBackend
 from typer.testing import CliRunner
 
 from notion_cli_list_manager.cli import State, app
@@ -23,6 +25,31 @@ class FakeClient:
 
     def delete_page(self, page_id):
         self.deleted.append(page_id)
+
+
+class MemoryKeyring(KeyringBackend):
+    priority = 1
+
+    def __init__(self):
+        self.store = {}
+
+    def get_password(self, service, username):
+        return self.store.get((service, username))
+
+    def set_password(self, service, username, password):
+        self.store[(service, username)] = password
+
+    def delete_password(self, service, username):
+        del self.store[(service, username)]
+
+
+@pytest.fixture(autouse=True)
+def memory_keyring():
+    previous = keyring.get_keyring()
+    backend = MemoryKeyring()
+    keyring.set_keyring(backend)
+    yield backend
+    keyring.set_keyring(previous)
 
 
 def make_page(page_id: str, title: str, **props: dict) -> dict:

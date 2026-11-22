@@ -21,7 +21,7 @@ A simple command-line tool for managing [Notion](http://notion.so) ___List___ da
 ```
     uv tool install notion-cli-list-manager   # or: pipx install notion-cli-list-manager
 ```
-- Set the token and your default database id:
+- Set the token (stored in your system keyring) and your default database id:
 ```
     list set --token [token] --id [database-id]
 ``` 
