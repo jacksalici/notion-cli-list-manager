@@ -1,5 +1,6 @@
 import json
 import tomllib
+from functools import cached_property
 from pathlib import Path
 
 import keyring
@@ -18,11 +19,23 @@ class ConfigError(Exception):
 class Config:
     def __init__(self, path: Path = APP_DIR / "config.toml"):
         self.path = path
+
+    @staticmethod
+    def parse(text: str) -> dict:
         try:
-            self.data = tomllib.loads(path.read_text()) if path.exists() else {}
+            data = tomllib.loads(text)
         except tomllib.TOMLDecodeError as e:
-            raise ConfigError(f"Invalid config file {path}: {e}") from e
-        self.data.pop("token", None)
+            raise ConfigError(f"Invalid config: {e}") from e
+        data.pop("token", None)
+        return data
+
+    @property
+    def text(self) -> str:
+        return self.path.read_text() if self.path.exists() else ""
+
+    @cached_property
+    def data(self) -> dict:
+        return self.parse(self.text)
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

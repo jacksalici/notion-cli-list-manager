@@ -49,11 +49,13 @@ class NotionClient:
             self.request("GET", f"data_sources/{self.data_source(database_id)}")["properties"]
         )
 
-    def query(self, database_id: str) -> list[dict]:
+    def query(self, database_id: str, filter: dict | None = None) -> list[dict]:
         path = f"data_sources/{self.data_source(database_id)}/query"
         pages, cursor = [], None
         while True:
-            body = {"start_cursor": cursor} if cursor else {}
+            body = {"filter": filter} if filter else {}
+            if cursor:
+                body["start_cursor"] = cursor
             data = self.request("POST", path, json=body)
             pages += data["results"]
             if not data.get("has_more"):
@@ -67,3 +69,18 @@ class NotionClient:
 
     def delete_page(self, page_id: str) -> dict:
         return self.request("PATCH", f"pages/{page_id}", json={"in_trash": True})
+
+    def markdown(self, page_id: str) -> str:
+        data = self.request("GET", f"pages/{page_id}/markdown", params={"markdown_version": "v2"})
+        if data["truncated"]:
+            raise NotionError("Page is too large to edit as a whole.")
+        return data["markdown"]
+
+    def set_markdown(self, page_id: str, markdown: str) -> list[dict]:
+        """Replace the page body; returns Notion's warnings, if any."""
+        body = {
+            "markdown_version": "v2",
+            "type": "replace_content",
+            "replace_content": {"new_str": markdown},
+        }
+        return self.request("PATCH", f"pages/{page_id}/markdown", json=body).get("warnings", [])

@@ -119,3 +119,52 @@ def test_errors(response, message):
     client, _ = make_client(response)
     with pytest.raises(NotionError, match=message):
         client.properties("db")
+
+
+def test_query_sends_filter_on_every_page():
+    flt = {"property": "Name", "title": {"equals": "T"}}
+    client, session = make_client(
+        sources("ds"),
+        FakeResponse(body={"results": [], "has_more": True, "next_cursor": "c"}),
+        FakeResponse(body={"results": [], "has_more": False}),
+    )
+    client.query("db", filter=flt)
+    assert [kw["json"] for _, _, kw in session.calls[1:]] == [
+        {"filter": flt},
+        {"filter": flt, "start_cursor": "c"},
+    ]
+
+
+def page_markdown(text, truncated=False, **extra):
+    body = {"object": "page_markdown", "markdown": text, "truncated": truncated}
+    return FakeResponse(body={**body, "unknown_block_ids": [], **extra})
+
+
+def test_markdown():
+    client, session = make_client(page_markdown("# Hi"))
+    assert client.markdown("p1") == "# Hi"
+    assert session.calls[0] == (
+        "GET",
+        URL + "pages/p1/markdown",
+        {"timeout": 30, "params": {"markdown_version": "v2"}},
+    )
+
+
+def test_markdown_refuses_truncated_pages():
+    client, _ = make_client(page_markdown("partial", truncated=True))
+    with pytest.raises(NotionError, match="too large"):
+        client.markdown("p1")
+
+
+@pytest.mark.parametrize("warnings", [[], [{"code": "unsupported_tag", "message": "x"}]])
+def test_set_markdown(warnings):
+    extra = {"warnings": warnings} if warnings else {}
+    client, session = make_client(page_markdown("new", **extra))
+    assert client.set_markdown("p1", "new") == warnings
+    method, url, kwargs = session.calls[0]
+    assert (method, url) == ("PATCH", URL + "pages/p1/markdown")
+    assert kwargs["json"] == {
+        "markdown_version": "v2",
+        "type": "replace_content",
+        "replace_content": {"new_str": "new"},
+    }

@@ -1,8 +1,10 @@
+import os
 import shutil
 import time
 from datetime import date, timedelta
 from typing import Annotated
 
+import click
 import typer
 from prettytable import PrettyTable
 
@@ -15,6 +17,9 @@ app = typer.Typer(
     pretty_exceptions_show_locals=False,
 )
 
+show_app = typer.Typer(help="Open files in the editor.")
+app.add_typer(show_app, name="show")
+
 Db = Annotated[str | None, typer.Option(help="Database label (default: Default, else the first).")]
 
 
@@ -25,7 +30,7 @@ class State:
         index: PageIndex | None = None,
         client: NotionClient | None = None,
     ):
-        self.config = config or Config()
+        self.config = config or Config()  # parsed lazily, so a broken file can still be edited
         self.index = index or PageIndex()
         self._client = client
 
@@ -34,6 +39,12 @@ class State:
         if self._client is None:
             self._client = NotionClient(self.config.token)
         return self._client
+
+
+def edit_text(text: str, extension: str) -> str | None:
+    """Open TEXT in $EDITOR (default nano); None if not saved or unchanged."""
+    edited = click.edit(text, editor=os.environ.get("EDITOR", "nano"), extension=extension)
+    return None if edited is None or edited == text else edited
 
 
 def parse_indices(text: str) -> list[int]:
@@ -101,6 +112,45 @@ def add(ctx: typer.Context, title: str, db: Db = None):
     label = ctx.obj.config.resolve(db)
     ctx.obj.client.create_page(ctx.obj.config.databases[label]["id"], title)
     typer.echo(f"Added '{title}' to '{label}'.")
+
+
+@app.command()
+def edit(ctx: typer.Context, title: str, db: Db = None):
+    """Edit a page's content as markdown; saving the file updates the page."""
+    state = ctx.obj
+    label = state.config.resolve(db)
+    title_filter = {"property": "Name", "title": {"equals": title}}
+    pages = state.client.query(state.config.databases[label]["id"], filter=title_filter)
+    if len(pages) != 1:
+        raise typer.BadParameter(f"{len(pages)} pages titled {title!r} in '{label}', expected 1.")
+    page_id = pages[0]["id"]
+    edited = edit_text(state.client.markdown(page_id), ".md")
+    if edited is None:
+        typer.echo("No changes.")
+        return
+    for warning in state.client.set_markdown(page_id, edited):
+        typer.secho(f"Warning: {warning['message']}", err=True, fg="yellow")
+    typer.echo(f"Saved '{title}'.")
+
+
+@show_app.command("configs")
+def show_configs(ctx: typer.Context):
+    """Edit the config file; it is saved only if it is valid TOML."""
+    config = ctx.obj.config
+    text = config.text
+    while (edited := edit_text(text, ".toml")) is not None:
+        try:
+            config.data = config.parse(edited)
+        except ConfigError as e:
+            typer.secho(str(e), err=True, fg="yellow")
+            if not typer.confirm("Edit again?", default=True):
+                break
+            text = edited
+            continue
+        config.save()
+        typer.echo(f"Saved {config.path}.")
+        return
+    typer.echo("No changes.")
 
 
 @app.command()

@@ -71,8 +71,10 @@ def test_reads_legacy_format(tmp_path):
 def test_invalid_file(tmp_path):
     path = tmp_path / "config.toml"
     path.write_text("not = [valid")
+    config = Config(path)
+    assert config.text == "not = [valid"
     with pytest.raises(ConfigError, match="Invalid config"):
-        Config(path)
+        _ = config.databases
 
 
 def test_unknown_database(tmp_path):
@@ -111,3 +113,7 @@ def test_resolve_errors(tmp_path, labels, given, message):
     config.databases.update({label: {"id": label} for label in labels})
     with pytest.raises(ConfigError, match=message):
         config.resolve(given)
+
+
+def test_parse_drops_token():
+    assert Config.parse('token = "x"\n[databases.A]\nid = "a"') == {"databases": {"A": {"id": "a"}}}

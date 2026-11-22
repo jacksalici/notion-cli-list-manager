@@ -1,6 +1,7 @@
 import pytest
 import typer
 from conftest import make_page
+from typer.testing import CliRunner
 
 from notion_cli_list_manager import cli
 from notion_cli_list_manager.client import NotionError
@@ -136,3 +137,74 @@ def test_without_default_database_the_first_is_used(invoke, client, state):
     result = invoke("add", "Task")
     assert result.exit_code == 0 and "to 'Work'" in result.output
     assert client.created == [("db2", "Task", {})]
+
+
+def test_edit_saves_changed_markdown(invoke, client, editor):
+    client.pages["db1"] = [make_page("p0", "Other"), make_page("p1", "Notes")]
+    client.markdowns["p1"] = "old"
+    client.warnings = [{"code": "unsupported_tag", "message": "dropped <x>"}]
+    editor.results = ["new"]
+    result = invoke("edit", "Notes")
+    assert result.exit_code == 0 and "Saved 'Notes'." in result.output
+    assert "Warning: dropped <x>" in result.output
+    assert editor.calls == [("old", "nano", ".md")]
+    assert client.markdowns["p1"] == "new"
+
+
+@pytest.mark.parametrize("result", [None, "old"])
+def test_edit_without_changes_does_not_save(invoke, client, editor, result):
+    client.pages["db1"] = [make_page("p1", "Notes")]
+    client.markdowns["p1"] = "old"
+    client.set_markdown = None  # would raise if called
+    editor.results = [result]
+    assert "No changes." in invoke("edit", "Notes").output
+
+
+@pytest.mark.parametrize("titles", [[], ["Notes", "Notes"]])
+def test_edit_needs_exactly_one_match(invoke, client, editor, titles):
+    client.pages["db1"] = [make_page(f"p{i}", t) for i, t in enumerate(titles)]
+    result = invoke("edit", "Notes")
+    assert result.exit_code == 2 and editor.calls == []
+
+
+def test_edit_respects_editor_env(invoke, client, editor, monkeypatch):
+    monkeypatch.setenv("EDITOR", "vim")
+    client.pages["db1"] = [make_page("p1", "Notes")]
+    client.markdowns["p1"] = "old"
+    editor.results = [None]
+    invoke("edit", "Notes")
+    assert editor.calls[0][1] == "vim"
+
+
+def test_show_configs_saves_valid_toml(invoke, state, editor):
+    editor.results = ['[databases.New]\nid = "n"\n']
+    result = invoke("show", "configs")
+    assert result.exit_code == 0 and "Saved" in result.output
+    assert editor.calls[0][0].startswith("[databases") and editor.calls[0][2] == ".toml"
+    assert Config(state.config.path).databases == {"New": {"id": "n"}}
+
+
+def test_show_configs_reopens_invalid_toml_with_the_edits(invoke, state, editor):
+    editor.results = ["broken = [", 'fixed = "yes"\n']
+    result = invoke("show", "configs", input="y\n")
+    assert "Invalid config" in result.output
+    assert editor.calls[1][0] == "broken = ["
+    assert Config(state.config.path).data == {"fixed": "yes"}
+
+
+def test_show_configs_discards_invalid_toml_when_declined(invoke, state, editor):
+    before = state.config.path.read_text()
+    editor.results = ["broken = ["]
+    result = invoke("show", "configs", input="n\n")
+    assert "No changes." in result.output
+    assert state.config.path.read_text() == before
+
+
+def test_show_configs_can_fix_a_broken_file(tmp_path, client, editor):
+    path = tmp_path / "config.toml"
+    path.write_text("broken = [")
+    editor.results = ['[databases.A]\nid = "a"\n']
+    state = cli.State(Config(path), client=client)
+    result = CliRunner().invoke(cli.app, ["show", "configs"], obj=state)
+    assert result.exit_code == 0
+    assert Config(path).databases == {"A": {"id": "a"}}

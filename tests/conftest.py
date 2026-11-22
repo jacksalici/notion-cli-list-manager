@@ -1,3 +1,4 @@
+import click
 import keyring
 import pytest
 from keyring.backend import KeyringBackend
@@ -13,9 +14,22 @@ class FakeClient:
         self.props: list[str] = []
         self.created: list[tuple] = []
         self.deleted: list[str] = []
+        self.markdowns: dict[str, str] = {}
+        self.warnings: list[dict] = []
 
-    def query(self, database_id):
-        return self.pages.get(database_id, [])
+    def query(self, database_id, filter=None):
+        pages = self.pages.get(database_id, [])
+        if filter:
+            title = filter["title"]["equals"]
+            pages = [p for p in pages if p["properties"]["Name"]["title"][0]["plain_text"] == title]
+        return pages
+
+    def markdown(self, page_id):
+        return self.markdowns[page_id]
+
+    def set_markdown(self, page_id, markdown):
+        self.markdowns[page_id] = markdown
+        return self.warnings
 
     def properties(self, database_id):
         return self.props
@@ -50,6 +64,26 @@ def memory_keyring():
     keyring.set_keyring(backend)
     yield backend
     keyring.set_keyring(previous)
+
+
+class FakeEditor:
+    """Stands in for click.edit: returns queued results and records each call."""
+
+    def __init__(self):
+        self.results: list[str | None] = []
+        self.calls: list[tuple] = []
+
+    def __call__(self, text, editor, extension):
+        self.calls.append((text, editor, extension))
+        return self.results.pop(0)
+
+
+@pytest.fixture
+def editor(monkeypatch):
+    fake = FakeEditor()
+    monkeypatch.setattr(click, "edit", fake)
+    monkeypatch.delenv("EDITOR", raising=False)
+    return fake
 
 
 def make_page(page_id: str, title: str, **props: dict) -> dict:

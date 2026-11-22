@@ -1,6 +1,6 @@
 [project]
 name = "notion-cli-list-manager"
-version = "1.0.0"
+version = "1.1.0"
 description = "A simple command-line tool for managing Notion databases."
 readme = "readme.md"
 license = "MIT"
@@ -8,6 +8,7 @@ authors = [{ name = "Jack Salici" }]
 keywords = ["notion", "cli", "todo"]
 requires-python = ">=3.11"
 dependencies = [
+    "click>=8.1",
     "keyring>=25",
     "prettytable>=3.9",
     "requests>=2.31",
@@ -28,6 +29,9 @@ dev = ["pytest>=8", "ruff>=0.6"]
 [build-system]
 requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["showcase.gif", ".github"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

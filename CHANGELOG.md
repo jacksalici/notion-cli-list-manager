@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-11-23
+### Added
+- `list edit TITLE [--db LABEL]`: edit a page's content as markdown in `$EDITOR` (default nano); saving updates the page.
+- `list show configs`: edit the config file in `$EDITOR`; it is saved only if it is valid TOML.
+
 ## [1.0.0] - 2026-11-23
 First stable release: from here on, breaking changes bump the major version.
 
