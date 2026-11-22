@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import requests
 import toml
@@ -117,13 +118,27 @@ class NotionAPI:
         except Exception:
             return []
     
+    @staticmethod
+    def build_page_payload(title, database_id, extra_properties=None):
+        """Build the request body for creating a page.
+
+        Serialised with json.dumps so titles containing quotes, backslashes
+        or non-ASCII characters produce valid, non-injectable JSON.
+        """
+        properties = {"Name": {"title": [{"text": {"content": title}}]}}
+        if extra_properties:
+            properties.update(extra_properties)
+        return {"parent": {"database_id": database_id}, "properties": properties}
+
     def new_page(self, title, database_id, custom_data=None):
-        """Create a new page in a database."""
-        if custom_data:
-            data = custom_data
-        else:
-            data = f'{{"parent":{{"database_id":"{database_id}"}},"properties":{{"Name":{{"title":[{{"text":{{"content":"{title}"}}}}]}}}}}'
-        
+        """Create a new page in a database.
+
+        `custom_data` may be a dict (serialised here) or a pre-encoded JSON string.
+        """
+        data = custom_data if custom_data else self.build_page_payload(title, database_id)
+        if isinstance(data, dict):
+            data = json.dumps(data)
+
         return self.make_request(requests.post, "pages", data)
     
     def get_pages(self, database_id):

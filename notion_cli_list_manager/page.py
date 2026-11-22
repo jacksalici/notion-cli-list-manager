@@ -237,12 +237,11 @@ class NotionPage:
                     date = f"{year}-{month:02d}-{day:02d}"
                     page_title = date if title == "d4t35" else title
                     
-                    data = (
-                        '{"parent":{"database_id":"' + database_id + 
-                        '"},"properties":{"Name":{"title":[{"text":{"content":"' + page_title + 
-                        '"}}]},"Date":{"date":{"start":"' + date + '"}}}}'
+                    data = self.api.build_page_payload(
+                        page_title, database_id,
+                        extra_properties={"Date": {"date": {"start": date}}},
                     )
-                    
+
                     self.api.new_page(page_title, database_id, data)
                     progress.update(1)
                     time.sleep(0.5)  # Rate limiting to avoid API limits
