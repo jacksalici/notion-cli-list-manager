@@ -33,10 +33,17 @@ def make_client(*responses, token="secret"):
     return NotionClient(token, session), session
 
 
+URL = "https://api.notion.com/v1/"
+
+
+def sources(*ids):
+    return FakeResponse(body={"data_sources": [{"id": i, "name": i} for i in ids]})
+
+
 @pytest.mark.parametrize("token", ["secret", "Bearer secret"])
 def test_headers(token):
     _, session = make_client(token=token)
-    assert session.headers == {"Authorization": "Bearer secret", "Notion-Version": "2021-08-16"}
+    assert session.headers == {"Authorization": "Bearer secret", "Notion-Version": "2026-03-11"}
 
 
 def test_missing_token():
@@ -44,14 +51,47 @@ def test_missing_token():
         NotionClient("")
 
 
+def test_data_source_is_resolved_once_per_database():
+    client, session = make_client(sources("ds1"), sources("ds2"))
+    assert [client.data_source(d) for d in ("db1", "db1", "db2")] == ["ds1", "ds1", "ds2"]
+    assert [url for _, url, _ in session.calls] == [URL + "databases/db1", URL + "databases/db2"]
+
+
+@pytest.mark.parametrize("ids", [(), ("a", "b")])
+def test_data_source_requires_exactly_one(ids):
+    client, _ = make_client(sources(*ids))
+    with pytest.raises(NotionError, match=f"has {len(ids)} data sources"):
+        client.data_source("db")
+
+
+def test_properties():
+    client, session = make_client(
+        sources("ds"), FakeResponse(body={"properties": {"Name": {}, "Date": {}}})
+    )
+    assert client.properties("db") == ["Name", "Date"]
+    assert session.calls[1][:2] == ("GET", URL + "data_sources/ds")
+
+
+def test_query_follows_pagination():
+    client, session = make_client(
+        sources("ds"),
+        FakeResponse(body={"results": [{"id": 1}], "has_more": True, "next_cursor": "c"}),
+        FakeResponse(body={"results": [{"id": 2}], "has_more": False}),
+    )
+    assert client.query("db") == [{"id": 1}, {"id": 2}]
+    queries = session.calls[1:]
+    assert {(m, u) for m, u, _ in queries} == {("POST", URL + "data_sources/ds/query")}
+    assert [kw["json"] for _, _, kw in queries] == [{}, {"start_cursor": "c"}]
+
+
 def test_create_page_body():
-    client, session = make_client(FakeResponse(body={"id": "p"}))
+    client, session = make_client(sources("ds"), FakeResponse(body={"id": "p"}))
     title = 'say "hi" \\ 🚀'
     client.create_page("db", title, Date={"date": {"start": "2024-01-01"}})
-    method, url, kwargs = session.calls[0]
-    assert (method, url) == ("POST", "https://api.notion.com/v1/pages")
+    method, url, kwargs = session.calls[1]
+    assert (method, url) == ("POST", URL + "pages")
     assert kwargs["json"] == {
-        "parent": {"database_id": "db"},
+        "parent": {"type": "data_source_id", "data_source_id": "ds"},
         "properties": {
             "Name": {"title": [{"text": {"content": title}}]},
             "Date": {"date": {"start": "2024-01-01"}},
@@ -59,24 +99,12 @@ def test_create_page_body():
     }
 
 
-def test_query_follows_pagination():
-    client, session = make_client(
-        FakeResponse(body={"results": [{"id": 1}], "has_more": True, "next_cursor": "c"}),
-        FakeResponse(body={"results": [{"id": 2}], "has_more": False}),
-    )
-    assert client.query("db") == [{"id": 1}, {"id": 2}]
-    assert [kw["json"] for _, _, kw in session.calls] == [{}, {"start_cursor": "c"}]
-
-
-def test_properties():
-    client, _ = make_client(FakeResponse(body={"properties": {"Name": {}, "Date": {}}}))
-    assert client.properties("db") == ["Name", "Date"]
-
-
-def test_delete_page():
+def test_delete_page_moves_it_to_trash():
     client, session = make_client(FakeResponse(body={}))
     client.delete_page("p1")
-    assert session.calls[0][:2] == ("DELETE", "https://api.notion.com/v1/blocks/p1")
+    assert session.calls == [
+        ("PATCH", URL + "pages/p1", {"timeout": 30, "json": {"in_trash": True}})
+    ]
 
 
 @pytest.mark.parametrize(

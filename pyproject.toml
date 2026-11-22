@@ -1,6 +1,6 @@
 [project]
 name = "notion-cli-list-manager"
-version = "0.2.0"
+version = "1.0.0"
 description = "A simple command-line tool for managing Notion databases."
 readme = "readme.md"
 license = "MIT"

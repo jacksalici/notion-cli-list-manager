@@ -7,7 +7,7 @@ class NotionError(Exception):
 
 class NotionClient:
     base_url = "https://api.notion.com/v1/"
-    version = "2021-08-16"
+    version = "2026-03-11"
 
     def __init__(self, token: str, session: requests.Session | None = None):
         if not token:
@@ -19,6 +19,7 @@ class NotionClient:
                 "Notion-Version": self.version,
             }
         )
+        self._data_sources: dict[str, str] = {}
 
     def request(self, method: str, path: str, **kwargs) -> dict:
         try:
@@ -33,23 +34,36 @@ class NotionClient:
             raise NotionError(f"HTTP {response.status_code}: {message}")
         return response.json()
 
+    def data_source(self, database_id: str) -> str:
+        if database_id not in self._data_sources:
+            sources = self.request("GET", f"databases/{database_id}")["data_sources"]
+            if len(sources) != 1:
+                raise NotionError(
+                    f"Database {database_id} has {len(sources)} data sources, expected 1."
+                )
+            self._data_sources[database_id] = sources[0]["id"]
+        return self._data_sources[database_id]
+
     def properties(self, database_id: str) -> list[str]:
-        return list(self.request("GET", f"databases/{database_id}")["properties"])
+        return list(
+            self.request("GET", f"data_sources/{self.data_source(database_id)}")["properties"]
+        )
 
     def query(self, database_id: str) -> list[dict]:
+        path = f"data_sources/{self.data_source(database_id)}/query"
         pages, cursor = [], None
         while True:
             body = {"start_cursor": cursor} if cursor else {}
-            data = self.request("POST", f"databases/{database_id}/query", json=body)
+            data = self.request("POST", path, json=body)
             pages += data["results"]
             if not data.get("has_more"):
                 return pages
             cursor = data["next_cursor"]
 
     def create_page(self, database_id: str, title: str, **properties: dict) -> dict:
+        parent = {"type": "data_source_id", "data_source_id": self.data_source(database_id)}
         properties = {"Name": {"title": [{"text": {"content": title}}]}, **properties}
-        body = {"parent": {"database_id": database_id}, "properties": properties}
-        return self.request("POST", "pages", json=body)
+        return self.request("POST", "pages", json={"parent": parent, "properties": properties})
 
     def delete_page(self, page_id: str) -> dict:
-        return self.request("DELETE", f"blocks/{page_id}")
+        return self.request("PATCH", f"pages/{page_id}", json={"in_trash": True})
