@@ -1,0 +1,53 @@
+import pytest
+from typer.testing import CliRunner
+
+from notion_cli_list_manager.cli import State, app
+from notion_cli_list_manager.config import Config, PageIndex
+
+
+class FakeClient:
+    def __init__(self):
+        self.pages: dict[str, list[dict]] = {}
+        self.props: list[str] = []
+        self.created: list[tuple] = []
+        self.deleted: list[str] = []
+
+    def query(self, database_id):
+        return self.pages.get(database_id, [])
+
+    def properties(self, database_id):
+        return self.props
+
+    def create_page(self, database_id, title, **properties):
+        self.created.append((database_id, title, properties))
+
+    def delete_page(self, page_id):
+        self.deleted.append(page_id)
+
+
+def make_page(page_id: str, title: str, **props: dict) -> dict:
+    return {
+        "id": page_id,
+        "properties": {"Name": {"type": "title", "title": [{"plain_text": title}]}, **props},
+    }
+
+
+@pytest.fixture
+def client():
+    return FakeClient()
+
+
+@pytest.fixture
+def state(tmp_path, client):
+    config = Config(tmp_path / "config.toml")
+    config.token = "secret"
+    config.databases["Default"] = {"id": "db1", "properties": ["Name", "Done"]}
+    config.databases["Work"] = {"id": "db2"}
+    config.save()
+    return State(config, PageIndex(tmp_path / "pages.json"), client)
+
+
+@pytest.fixture
+def invoke(state):
+    runner = CliRunner()
+    return lambda *args, input=None: runner.invoke(app, list(args), obj=state, input=input)

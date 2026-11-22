@@ -1,5 +1,9 @@
-/vir_env
-.vscode
-*.json
-*.toml
+.venv/
+vir_env/
+__pycache__/
 *.pyc
+dist/
+.DS_Store
+.vscode/
+config.toml
+pages.json

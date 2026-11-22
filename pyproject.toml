@@ -1,29 +1,38 @@
-[tool.poetry]
+[project]
 name = "notion-cli-list-manager"
-version = "0.1.6"
+version = "0.2.0"
 description = "A simple command-line tool for managing Notion databases."
-authors = ["Jack Salici"]
-repository = "https://github.com/jacksalici/notion-cli-list-manager"
-keywords = ["Notion", "CLI", "todo manager"]
+readme = "readme.md"
 license = "MIT"
-readme = "README.md"
-documentation = "https://github.com/jacksalici/notion-cli-list-manager/wiki"
+authors = [{ name = "Jack Salici" }]
+keywords = ["notion", "cli", "todo"]
+requires-python = ">=3.11"
+dependencies = [
+    "prettytable>=3.9",
+    "requests>=2.31",
+    "tomli-w>=1.0",
+    "typer>=0.12",
+]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-requests = "^2.26.0"
-typer = "^0.4.0"
-colorama = "^0.4.4"
-toml = "^0.10.2"
-prettytable = "^2.5.0"
+[project.urls]
+Repository = "https://github.com/jacksalici/notion-cli-list-manager"
+Documentation = "https://github.com/jacksalici/notion-cli-list-manager/wiki"
 
+[project.scripts]
+list = "notion_cli_list_manager.cli:run"
 
-[tool.poetry.scripts]
-list = "notion_cli_list_manager.main:app"
-
-[tool.poetry.dev-dependencies]
-pytest = "^5.2"
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
